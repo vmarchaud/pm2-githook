@@ -1,0 +1,39 @@
+{
+  "name": "pm2-githook",
+  "version": "1.0.0",
+  "description": "receive http hook from github and ask pm2 to reload the application for you",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/vmarchaud/pm2-githook.git"
+  },
+  "keywords": [
+    "pm2",
+    "github",
+    "webhook",
+    "hook",
+    "reload",
+    "restart",
+    "git",
+    "pull"
+  ],
+  "author": "vmarchaud",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/vmarchaud/pm2-githook/issues"
+  },
+  "homepage": "https://github.com/vmarchaud/pm2-githook#readme",
+  "dependencies": {
+    "pm2": "^2.0.18",
+    "pmx": "^0.6.8"
+  },
+  "config": {
+    "apps": {
+      "app_name": "MY_SECRET"
+    },
+    "port": 8888
+  }
+}
