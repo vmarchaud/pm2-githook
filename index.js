@@ -70,7 +70,7 @@ Worker.prototype.processRequest = function (req) {
   temp.update(req.body, 'utf-8');
   var hash = temp.digest('hex');
 
-  if (hash !== req.headers['x-hub-signature']) 
+  if ('sha1=' + hash !== req.headers['x-hub-signature']) 
     return console.log("Received invalid request for app %s", target_app);
 
   console.log("Received valid request to pull and reload %s", target_app);
