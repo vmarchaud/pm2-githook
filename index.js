@@ -8,6 +8,8 @@ var http    = require('http');
 var crypto  = require('crypto');
 var pmx     = require('pmx');
 var pm2     = require('pm2');
+var exec    = require('child_process').exec;
+var async   = require('async');
 
 // init pmx module
 pmx.initModule({}, function (err, conf) {
@@ -62,21 +64,68 @@ Worker.prototype.processRequest = function (req) {
   if (!req.headers['x-github-event']) return;
   if (!req.headers['x-hub-signature']) return;
 
-  var target_app = req.url.split('/').pop();
-  if (target_app.length === 0) return;
+  var target_name = req.url.split('/').pop();
+  if (target_name.length === 0) return;
+
+  var target_app = this.apps[target_name];
+  if (!target_app) return;
 
   // compute hash of body with secret, github should send this to verify authenticity
-  var temp = crypto.createHmac('sha1', this.apps[target_app]);
+  var temp = crypto.createHmac('sha1', target_app.secret);
   temp.update(req.body, 'utf-8');
   var hash = temp.digest('hex');
 
   if ('sha1=' + hash !== req.headers['x-hub-signature']) 
-    return console.log("Received invalid request for app %s", target_app);
+    return console.log("[%s] Received invalid request for app %s", Date.now().toLocaleString(), target_name);
 
-  console.log("Received valid request to pull and reload %s", target_app);
-  pm2.pullAndGracefulReload(target_app, function (err, data) {
-    if (err) return console.error(err);
-    console.log("Successfuly pull and reloaded application %s", target_app);
+  console.log("[%s] Received valid hook for app %s", Date.now().toLocaleString(), target_name);
+
+  async.series([
+    // Pre-hook
+    function (callback) {
+      if (!target_app.prehook) return callback(null);
+
+      // try to get the cwd to execute it correctly
+      pm2.describe(target_name, function (err, process) {
+        if (!process || process.length === 0) return callback(new Error('Application not found'));
+
+        // execute the actual command in the cwd of the application
+        exec(target_app.prehook, { cwd: process.pm2_env.cwd }, function (err, stdout, stderr) {
+          if (!process || process.length === 0) return callback(err);
+
+          console.log('[%s] Pre-hook command has been successfuly executed for app %s', Date.now().toLocaleString(), target_name);
+          return callback(null);
+        })
+      })
+    },
+    function (callback) {
+      pm2.pullAndGracefulReload(target_name, function (err, data) {
+        if (err) return callback(err);
+        console.log("[%s] Successfuly pull and reloaded application %s", Date.now().toLocaleString(), target_name);
+      })
+    },
+    // Post-hook
+    function (callback) {
+      if (!target_app.posthook) return callback(null);
+
+      // try to get the cwd to execute it correctly
+      pm2.describe(target_name, function (err, process) {
+        if (!process || process.length === 0) return callback(new Error('Application not found'));
+
+        // execute the actual command in the cwd of the application
+        exec(target_app.posthook, { cwd: process.pm2_env.cwd }, function (err, stdout, stderr) {
+          if (!process || process.length === 0) return callback(err);
+
+          console.log('[%s] Posthook command has been successfuly executed for app %s', Date.now().toLocaleString(), target_name);
+          return callback(null);
+        })
+      })
+    }
+  ], function (err, results) {
+    if (err) {
+      console.log('[%s] An error has occuring while processing app %s', Date.now().toLocaleString(), target_name);
+      console.log(err);
+    }
   })
 }
 

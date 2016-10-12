@@ -1,6 +1,6 @@
 {
   "name": "pm2-githook",
-  "version": "1.0.2",
+  "version": "1.1.0",
   "description": "receive http hook from github and ask pm2 to reload the application for you",
   "main": "index.js",
   "scripts": {
@@ -27,12 +27,17 @@
   },
   "homepage": "https://github.com/vmarchaud/pm2-githook#readme",
   "dependencies": {
+    "async": "^2.1.1",
     "pm2": "^2.0.18",
     "pmx": "^0.6.8"
   },
   "config": {
     "apps": {
-      "app_name": "MY_SECRET"
+      "app_name": {
+        "secret": "mysecret",
+        "pre": "npm install --production && git submodule update --init",
+        "post": "echo done"
+      }
     },
     "port": 8888
   }
