@@ -90,7 +90,7 @@ Worker.prototype.processRequest = function (req) {
         if (err || !process || process.length === 0) return callback(err || new Error('Application not found'));
 
         // execute the actual command in the cwd of the application
-        exec(target_app.prehook, { cwd: process[0].pm2_env.cwd, env: process[0].pm2_env }, function (err, stdout, stderr) {
+        exec(target_app.prehook, { cwd: process[0].pm2_env.cwd }, function (err, stdout, stderr) {
           if (err || !process || process.length === 0) return callback(err);
 
           console.log('[%s] Pre-hook command has been successfuly executed for app %s', new Date().toISOString(), target_name);
@@ -113,7 +113,7 @@ Worker.prototype.processRequest = function (req) {
         if (err || !process || process.length === 0) return callback(err || new Error('Application not found'));
 
         // execute the actual command in the cwd of the application
-        exec(target_app.posthook, { cwd: process[0].pm2_env.cwd, env: process[0].pm2_env }, function (err, stdout, stderr) {
+        exec(target_app.posthook, { cwd: process[0].pm2_env.cwd }, function (err, stdout, stderr) {
           if (err || !process || process.length === 0) return callback(err);
 
           console.log('[%s] Posthook command has been successfuly executed for app %s', new Date().toISOString(), target_name);
