@@ -76,9 +76,9 @@ Worker.prototype.processRequest = function (req) {
   var hash = temp.digest('hex');
 
   if ('sha1=' + hash !== req.headers['x-hub-signature']) 
-    return console.log("[%s] Received invalid request for app %s", Date.now().toLocaleString(), target_name);
+    return console.log("[%s] Received invalid request for app %s", new Date().toISOString(), target_name);
 
-  console.log("[%s] Received valid hook for app %s", Date.now().toLocaleString(), target_name);
+  console.log("[%s] Received valid hook for app %s", new Date().toISOString(), target_name);
 
   async.series([
     // Pre-hook
@@ -90,10 +90,10 @@ Worker.prototype.processRequest = function (req) {
         if (!process || process.length === 0) return callback(new Error('Application not found'));
 
         // execute the actual command in the cwd of the application
-        exec(target_app.prehook, { cwd: process.pm2_env.cwd }, function (err, stdout, stderr) {
+        exec(target_app.prehook, { cwd: process[0].pm2_env.cwd, env: process[0].pm2_env }, function (err, stdout, stderr) {
           if (!process || process.length === 0) return callback(err);
 
-          console.log('[%s] Pre-hook command has been successfuly executed for app %s', Date.now().toLocaleString(), target_name);
+          console.log('[%s] Pre-hook command has been successfuly executed for app %s', new Date().toISOString(), target_name);
           return callback(null);
         })
       })
@@ -101,7 +101,7 @@ Worker.prototype.processRequest = function (req) {
     function (callback) {
       pm2.pullAndGracefulReload(target_name, function (err, data) {
         if (err) return callback(err);
-        console.log("[%s] Successfuly pull and reloaded application %s", Date.now().toLocaleString(), target_name);
+        console.log("[%s] Successfuly pull and reloaded application %s", new Date().toISOString(), target_name);
       })
     },
     // Post-hook
@@ -113,17 +113,17 @@ Worker.prototype.processRequest = function (req) {
         if (!process || process.length === 0) return callback(new Error('Application not found'));
 
         // execute the actual command in the cwd of the application
-        exec(target_app.posthook, { cwd: process.pm2_env.cwd }, function (err, stdout, stderr) {
+        exec(target_app.posthook, { cwd: process[0].pm2_env.cwd, env: process[0].pm2_env }, function (err, stdout, stderr) {
           if (!process || process.length === 0) return callback(err);
 
-          console.log('[%s] Posthook command has been successfuly executed for app %s', Date.now().toLocaleString(), target_name);
+          console.log('[%s] Posthook command has been successfuly executed for app %s', new Date().toISOString(), target_name);
           return callback(null);
         })
       })
     }
   ], function (err, results) {
     if (err) {
-      console.log('[%s] An error has occuring while processing app %s', Date.now().toLocaleString(), target_name);
+      console.log('[%s] An error has occuring while processing app %s', new Date().toISOString(), target_name);
       console.log(err);
     }
   })
