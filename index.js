@@ -86,11 +86,12 @@ Worker.prototype.processRequest = function (req) {
       if (!target_app.prehook) return callback(null);
 
       // try to get the cwd to execute it correctly
-      pm2.describe(target_name, function (err, process) {
-        if (err) return callback(err || new Error('Application not found'));
+      pm2.describe(target_name, function (err, apps) {
+        if (err || !apps || apps.length === 0) return callback(err || new Error('Application not found'));
 
         // execute the actual command in the cwd of the application
-        exec(target_app.prehook, { cwd: process[0].pm2_env.cwd }, function (err, stdout, stderr) {
+        var cwd = apps[0].pm_cwd ? apps[0].pm_cwd : apps[0].pm2_env.pm_cwd;
+        exec(target_app.prehook, { cwd: cwd }, function (err, stdout, stderr) {
           if (err) return callback(err);
 
           console.log('[%s] Pre-hook command has been successfuly executed for app %s', new Date().toISOString(), target_name);
@@ -109,12 +110,13 @@ Worker.prototype.processRequest = function (req) {
       if (!target_app.posthook) return callback(null);
 
       // try to get the cwd to execute it correctly
-      pm2.describe(target_name, function (err, process) {
-        if (err || !process || process.length === 0) return callback(err || new Error('Application not found'));
+      pm2.describe(target_name, function (err, apps) {
+        if (err || !apps || apps.length === 0) return callback(err || new Error('Application not found'));
 
         // execute the actual command in the cwd of the application
-        exec(target_app.posthook, { cwd: process[0].pm2_env.cwd }, function (err, stdout, stderr) {
-          if (err || !process || process.length === 0) return callback(err);
+        var cwd = apps[0].pm_cwd ? apps[0].pm_cwd : apps[0].pm2_env.pm_cwd;
+        exec(target_app.posthook, { cwd: cwd }, function (err, stdout, stderr) {
+          if (err) return callback(err);
 
           console.log('[%s] Posthook command has been successfuly executed for app %s', new Date().toISOString(), target_name);
           return callback(null);
