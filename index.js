@@ -10,6 +10,7 @@ var pmx     = require('pmx');
 var pm2     = require('pm2');
 var exec    = require('child_process').exec;
 var async   = require('async');
+var vizion  = require('vizion');
 
 // init pmx module
 pmx.initModule({}, function (err, conf) {
@@ -66,78 +67,91 @@ Worker.prototype.processRequest = function (req) {
   var target_app = this.apps[target_name];
   if (!target_app) return;
 
-  if (!target_app.service || target_app.service == 'github') {
-    // big security protection here, the legend says that yahoo use these kind.
-    if (!req.headers['x-github-event']) return;
-    if (!req.headers['x-hub-signature']) return;
+  // validate the request
+  switch (target_app.service) {
+    case 'gitlab': {
+      if (!req.headers['x-gitlab-token']) 
+        return console.log("[%s] Received invalid request for app %s (no headers found)", new Date().toISOString(), target_name);
 
-    // compute hash of body with secret, github should send this to verify authenticity
-    var temp = crypto.createHmac('sha1', target_app.secret);
-    temp.update(req.body, 'utf-8');
-    var hash = temp.digest('hex');
+      if (req.headers['x-gitlab-token'] !== target_app.secret)
+        return console.log("[%s] Received invalid request for app %s (not matching secret)", new Date().toISOString(), target_name);
+      break ;
+    }
+    case 'github' : 
+    default: {
+      if (!req.headers['x-github-event'] || !req.headers['x-hub-signature']) 
+        return console.log("[%s] Received invalid request for app %s (no headers found)", new Date().toISOString(), target_name);
 
-    if ('sha1=' + hash !== req.headers['x-hub-signature'])
-      return console.log("[%s] Received invalid request for app %s", new Date().toISOString(), target_name);
-  }
-  else if (target_app.service == 'gitlab') {
-    if (!req.headers['x-gitlab-token']) return;
+      // compute hash of body with secret, github should send this to verify authenticity
+      var temp = crypto.createHmac('sha1', target_app.secret);
+      temp.update(req.body, 'utf-8');
+      var hash = temp.digest('hex');
 
-    if (req.headers['x-gitlab-token'] !== target_app.secret)
-      return console.log("[%s] Received invalid request for app %s", new Date().toISOString(), target_name);
-  }
-  else {
-    return console.log("[%s] Invalid service for app %s", new Date().toISOString(), target_name);
+      if ('sha1=' + hash !== req.headers['x-hub-signature'])
+        return console.log("[%s] Received invalid request for app %s", new Date().toISOString(), target_name);
+      break ;
+    }
   }
 
   console.log("[%s] Received valid hook for app %s", new Date().toISOString(), target_name);
 
   async.series([
-    // Pre-hook
+    // resolving cwd
     function (callback) {
-      if (!target_app.prehook) return callback(null);
-
       // try to get the cwd to execute it correctly
       pm2.describe(target_name, function (err, apps) {
         if (err || !apps || apps.length === 0) return callback(err || new Error('Application not found'));
 
         // execute the actual command in the cwd of the application
-        var cwd = apps[0].pm_cwd ? apps[0].pm_cwd : apps[0].pm2_env.pm_cwd;
-        exec(target_app.prehook, { cwd: cwd }, function (err, stdout, stderr) {
-          if (err) return callback(err);
+        target_app.cwd = apps[0].pm_cwd ? apps[0].pm_cwd : apps[0].pm2_env.pm_cwd;
+        return callback();
+      });
+    },
+    // Pull the application
+    function (callback) {
+       vizion.update({
+        folder: target_app.cwd
+      }, function (err, meta) {
+        if (err) return callback(err);
+        console.log("[%s] Successfuly pulled application %s", new Date().toISOString(), target_name);
+        return callback();
+      });
+    },
+    // Pre-hook
+    function (callback) {
+      if (!target_app.prehook) return callback();
 
-          console.log('[%s] Pre-hook command has been successfuly executed for app %s', new Date().toISOString(), target_name);
-          return callback(null);
-        })
+      exec(target_app.prehook, { cwd: target_app.cwd }, function (err, stdout, stderr) {
+        if (err) return callback(err);
+
+        console.log('[%s] Pre-hook command has been successfuly executed for app %s', new Date().toISOString(), target_name);
+        return callback();
       })
     },
+    // Reload the application
     function (callback) {
-      pm2.pullAndGracefulReload(target_name, function (err, data) {
+      pm2.gracefulReload(target_name, function (err, data) {
         if (err) return callback(err);
-        console.log("[%s] Successfuly pull and reloaded application %s", new Date().toISOString(), target_name);
+        console.log("[%s] Successfuly reloaded application %s", new Date().toISOString(), target_name);
+        return callback();
       })
     },
     // Post-hook
     function (callback) {
-      if (!target_app.posthook) return callback(null);
+      if (!target_app.posthook) return callback();
 
-      // try to get the cwd to execute it correctly
-      pm2.describe(target_name, function (err, apps) {
-        if (err || !apps || apps.length === 0) return callback(err || new Error('Application not found'));
+      // execute the actual command in the cwd of the application
+      exec(target_app.posthook, { cwd: target_app.cwd }, function (err, stdout, stderr) {
+        if (err) return callback(err);
 
-        // execute the actual command in the cwd of the application
-        var cwd = apps[0].pm_cwd ? apps[0].pm_cwd : apps[0].pm2_env.pm_cwd;
-        exec(target_app.posthook, { cwd: cwd }, function (err, stdout, stderr) {
-          if (err) return callback(err);
-
-          console.log('[%s] Posthook command has been successfuly executed for app %s', new Date().toISOString(), target_name);
-          return callback(null);
-        })
+        console.log('[%s] Posthook command has been successfuly executed for app %s', new Date().toISOString(), target_name);
+        return callback();
       })
     }
   ], function (err, results) {
     if (err) {
       console.log('[%s] An error has occuring while processing app %s', new Date().toISOString(), target_name);
-      console.log(err);
+      console.error(err);
     }
   })
 }

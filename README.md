@@ -16,21 +16,24 @@ PM2 module to receive http webhook from github, execute pre/post hook and gracef
         "APP_NAME" : {
           "secret" : "supersecret",
           "prehook" : "npm install --production && git submodule update --init",
-          "posthook" : "echo done"
+          "posthook" : "echo done",
+          "service": "github"
         }
       }
     ```
     
-  - `APP_NAME` is the name of the api **in pm2** and in the **payload url** defined on github (eg: : `http://127.0.0.1:8888/APP_NAME`).
-  - `secret` is the secret you put in github to verify that the transaction is made by github.
-  - `prehook` and `posthook` are shell command executed in the `cwd` **(care of this)** of the app before and after making the `pullAndGracefullReload`.
+    - `APP_NAME` is the name of the api **in pm2** and in the **url** defined on github or gitlab (eg: : `http://127.0.0.1:8888/APP_NAME`).
+    - `secret` is the secret you put in github/gitlab to verify that the transaction is made by github/gitlab.
+    - `prehook` is the shell command executed in the `cwd` **(care of this)** of the app after the `pull` and before the `gracefullReload`.
+    - `posthook` is the shell command executed in the `cwd` **(care of this)** of the app after making the `gracefullReload`.
+    - `service` is the service used to make the http call, you can set either `github` or  `gitlab`. (`github` is the default)
 
 #### How to set these values ?
 
  After having installed the module you have to type :
 `pm2 set pm2-githook:key value`
 
-To set the `apps` option and since its a json string, i advice you to escape it to be sure that the string is correctly set ([use this kind of tool](http://bernhardhaeussner.de/odd/json-escape/)).
+To set the `apps` option and since its a json string, i advice you to escape it to be sure that the string is correctly set ([using this kind of tool](http://bernhardhaeussner.de/odd/json-escape/)).
 
 e.g: 
 - `pm2 set pm2-githook:port 8080` (bind the http server port to 8080)

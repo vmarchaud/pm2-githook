@@ -1,7 +1,7 @@
 {
   "name": "pm2-githook",
-  "version": "1.3.2",
-  "description": "receive http hook from github and ask pm2 to reload the application for you",
+  "version": "1.5.0",
+  "description": "receive http hook from github/gitlab and ask pm2 to reload the application for you",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -13,6 +13,7 @@
   "keywords": [
     "pm2",
     "github",
+    "gitlab",
     "webhook",
     "hook",
     "reload",
@@ -29,14 +30,16 @@
   "dependencies": {
     "async": "^2.1.1",
     "pm2": "^2.0.18",
-    "pmx": "^0.6.8"
+    "pmx": "^0.6.8",
+    "vizion": "^0.2.13"
   },
   "config": {
     "apps": {
       "app_name": {
         "secret": "mysecret",
         "prehook": "npm install --production && git submodule update --init",
-        "posthook": "echo done"
+        "posthook": "echo done",
+        "service": "github"
       }
     },
     "port": 8888
