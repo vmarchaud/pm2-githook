@@ -60,23 +60,34 @@ Worker.prototype._handleHttp = function (req, res) {
 }
 
 Worker.prototype.processRequest = function (req) {
-  // big security protection here, the legend says that yahoo use these kind.
-  if (!req.headers['x-github-event']) return;
-  if (!req.headers['x-hub-signature']) return;
-
   var target_name = req.url.split('/').pop();
   if (target_name.length === 0) return;
 
   var target_app = this.apps[target_name];
   if (!target_app) return;
 
-  // compute hash of body with secret, github should send this to verify authenticity
-  var temp = crypto.createHmac('sha1', target_app.secret);
-  temp.update(req.body, 'utf-8');
-  var hash = temp.digest('hex');
+  if (!target_app.service || target_app.service == 'github') {
+    // big security protection here, the legend says that yahoo use these kind.
+    if (!req.headers['x-github-event']) return;
+    if (!req.headers['x-hub-signature']) return;
 
-  if ('sha1=' + hash !== req.headers['x-hub-signature']) 
-    return console.log("[%s] Received invalid request for app %s", new Date().toISOString(), target_name);
+    // compute hash of body with secret, github should send this to verify authenticity
+    var temp = crypto.createHmac('sha1', target_app.secret);
+    temp.update(req.body, 'utf-8');
+    var hash = temp.digest('hex');
+
+    if ('sha1=' + hash !== req.headers['x-hub-signature'])
+      return console.log("[%s] Received invalid request for app %s", new Date().toISOString(), target_name);
+  }
+  else if (target_app.service == 'gitlab') {
+    if (!req.headers['x-gitlab-token']) return;
+
+    if (req.headers['x-gitlab-token'] !== target_app.secret)
+      return console.log("[%s] Received invalid request for app %s", new Date().toISOString(), target_name);
+  }
+  else {
+    return console.log("[%s] Invalid service for app %s", new Date().toISOString(), target_name);
+  }
 
   console.log("[%s] Received valid hook for app %s", new Date().toISOString(), target_name);
 
