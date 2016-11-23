@@ -77,6 +77,20 @@ Worker.prototype.processRequest = function (req) {
         return console.log("[%s] Received invalid request for app %s (not matching secret)", new Date().toISOString(), target_name);
       break ;
     }
+    case 'jenkins': {
+      var ip = req.headers['x-forwarded-for'] || (req.connection ? req.connection.remoteAddress : false) ||
+            (req.socket ? req.socket.remoteAddress : false) || ((req.connection && req.connection.socket) ? 
+              req.connection.socket.remoteAddress : false) || '';
+      // ip must match the secret
+      if (ip.indexOf(target_app.secret) < 0) return 
+
+      var body = JSON.parse(req.body);
+      if (body.build.status !== "SUCCESS")
+        return console.log("[%s] Received valid hook but with failure build for app %s", new Date().toISOString(), target_name);
+      if (target_app.branch && body.build.scm.branch.indexOf(target_app.branch) < 0)
+        return console.log("[%s] Received valid hook but with a branch %s than configured for app %s", new Date().toISOString(), body.build.scm.branch, target_name);
+      break ;
+    }
     case 'github' : 
     default: {
       if (!req.headers['x-github-event'] || !req.headers['x-hub-signature']) 
