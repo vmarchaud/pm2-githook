@@ -30,6 +30,8 @@ PM2 module to receive http webhook from github, execute pre/post hook and gracef
       - `github` : you'll need to set the same secret as defined in github 
       - `gitlab` : you'll need to set the secret as the token defined in gitlab
       - `jenkins` : you'll need to set the secret as the ip of the jenkins (you can precise a `branch` entry to make action only for a branch)
+    - `nopm2` if set to true, we will not reload the application using pm2 (default to `false`)
+    - `cwd` if provided we don't resolve the cwd using pm2 and will take this value (defaults to `undefined`)
 
 #### How to set these values ?
 

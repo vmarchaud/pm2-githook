@@ -112,6 +112,9 @@ Worker.prototype.processRequest = function (req) {
   async.series([
     // resolving cwd
     function (callback) {
+      // if cwd is provided, we expect that it isnt a pm2 app
+      if (target_app.cwd) return callback();
+
       // try to get the cwd to execute it correctly
       pm2.describe(target_name, function (err, apps) {
         if (err || !apps || apps.length === 0) return callback(err || new Error('Application not found'));
@@ -144,6 +147,9 @@ Worker.prototype.processRequest = function (req) {
     },
     // Reload the application
     function (callback) {
+      // if no pm2 is provided, we don't reload
+      if (target_app.nopm2) return callback();
+
       pm2.gracefulReload(target_name, function (err, data) {
         if (err) return callback(err);
         console.log("[%s] Successfuly reloaded application %s", new Date().toISOString(), target_name);
