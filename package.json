@@ -1,6 +1,6 @@
 {
   "name": "pm2-githook",
-  "version": "1.6.1",
+  "version": "1.7.0",
   "description": "receive http hook from multiple source and ask pm2 to reload the application for you",
   "main": "index.js",
   "scripts": {
@@ -31,6 +31,7 @@
     "async": "^2.1.1",
     "pm2": "^2.0.18",
     "pmx": "^0.6.8",
+    "range_check": "^1.4.0",
     "vizion": "^0.2.13"
   },
   "config": {

@@ -11,6 +11,7 @@ var pm2     = require('pm2');
 var exec    = require('child_process').exec;
 var async   = require('async');
 var vizion  = require('vizion');
+var ipcheck = require('range_check');
 
 // init pmx module
 pmx.initModule({}, function (err, conf) {
@@ -51,6 +52,11 @@ Worker.prototype._handleHttp = function (req, res) {
   // do something only with post request
   if (req.method !== 'POST') return;
 
+  // get source ip
+  req.ip = req.headers['x-forwarded-for'] || (req.connection ? req.connection.remoteAddress : false) ||
+            (req.socket ? req.socket.remoteAddress : false) || ((req.connection && req.connection.socket) ? 
+              req.connection.socket.remoteAddress : false) || '';
+
   // get the whole body before processing
   req.body = '';
   req.on('data', function (data) {
@@ -78,17 +84,24 @@ Worker.prototype.processRequest = function (req) {
       break ;
     }
     case 'jenkins': {
-      var ip = req.headers['x-forwarded-for'] || (req.connection ? req.connection.remoteAddress : false) ||
-            (req.socket ? req.socket.remoteAddress : false) || ((req.connection && req.connection.socket) ? 
-              req.connection.socket.remoteAddress : false) || '';
       // ip must match the secret
-      if (ip.indexOf(target_app.secret) < 0) return 
+      if (ipcheck.inRange(req.ip, target_app.secret)) return 
 
       var body = JSON.parse(req.body);
       if (body.build.status !== "SUCCESS")
         return console.log("[%s] Received valid hook but with failure build for app %s", new Date().toISOString(), target_name);
       if (target_app.branch && body.build.scm.branch.indexOf(target_app.branch) < 0)
         return console.log("[%s] Received valid hook but with a branch %s than configured for app %s", new Date().toISOString(), body.build.scm.branch, target_name);
+      break ;
+    }
+    case 'bitbucket': {
+      var body = JSON.parse(req.body);
+      if (ipcheck.inRange(req.ip, target_app.secret || '104.192.143.0/24')) return 
+
+      if (!body.push)
+        return console.log("[%s] Received valid hook but without 'push' object for app %s", new Date().toISOString(), target_name);
+      if (target_app.branch &&  body.push.changes[0] && body.push.changes[0].new.name.indexOf(target_app.branch) < 0)
+        return console.log("[%s] Received valid hook but with a branch %s than configured for app %s", new Date().toISOString(), body.push.changes[0].new.name, target_name);
       break ;
     }
     case 'github' : 
