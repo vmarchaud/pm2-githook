@@ -85,7 +85,8 @@ Worker.prototype.processRequest = function (req) {
     }
     case 'jenkins': {
       // ip must match the secret
-      if (ipcheck.inRange(req.ip, target_app.secret)) return 
+      if (ipcheck.inRange(req.ip, target_app.secret))
+        return console.log("[%s] Received request from %s for app %s but ip configured was %s", new Date().toISOString(), req.ip, target_name, target_app.secret);
 
       var body = JSON.parse(req.body);
       if (body.build.status !== "SUCCESS")
@@ -95,11 +96,12 @@ Worker.prototype.processRequest = function (req) {
       break ;
     }
     case 'bitbucket': {
-      var body = JSON.parse(req.body);
-      if (ipcheck.inRange(req.ip, target_app.secret || '104.192.143.0/24')) return 
+      var body = JSON.parse(req.body), ip = target_app.secret || '104.192.143.0/24';
+      if (ipcheck.inRange(req.ip, ip)) 
+        return console.log("[%s] Received request from %s for app %s but ip configured was %s", new Date().toISOString(), req.ip, target_name, ip);
 
       if (!body.push)
-        return console.log("[%s] Received valid hook but without 'push' object for app %s", new Date().toISOString(), target_name);
+        return console.log("[%s] Received valid hook but without 'push' data for app %s", new Date().toISOString(), target_name);
       if (target_app.branch &&  body.push.changes[0] && body.push.changes[0].new.name.indexOf(target_app.branch) < 0)
         return console.log("[%s] Received valid hook but with a branch %s than configured for app %s", new Date().toISOString(), body.push.changes[0].new.name, target_name);
       break ;
