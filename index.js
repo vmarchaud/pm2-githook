@@ -11,7 +11,7 @@ var pm2     = require('pm2');
 var exec    = require('child_process').exec;
 var async   = require('async');
 var vizion  = require('vizion');
-var ipcheck = require('range_check');
+var ipaddr  = require('ipaddr.js');
 
 // init pmx module
 pmx.initModule({}, function (err, conf) {
@@ -56,6 +56,8 @@ Worker.prototype._handleHttp = function (req, res) {
   req.ip = req.headers['x-forwarded-for'] || (req.connection ? req.connection.remoteAddress : false) ||
             (req.socket ? req.socket.remoteAddress : false) || ((req.connection && req.connection.socket) ? 
               req.connection.socket.remoteAddress : false) || '';
+  if (req.ip.indexOf('::ffff:') !== -1)
+    req.ip = req.ip.replace('::ffff:', '');
 
   // get the whole body before processing
   req.body = '';
@@ -85,7 +87,7 @@ Worker.prototype.processRequest = function (req) {
     }
     case 'jenkins': {
       // ip must match the secret
-      if (ipcheck.inRange(req.ip, target_app.secret))
+      if (req.ip.indexOf(target_app.secret) < 0)
         return console.log("[%s] Received request from %s for app %s but ip configured was %s", new Date().toISOString(), req.ip, target_name, target_app.secret);
 
       var body = JSON.parse(req.body);
@@ -97,9 +99,9 @@ Worker.prototype.processRequest = function (req) {
     }
     case 'bitbucket': {
       var body = JSON.parse(req.body), ip = target_app.secret || '104.192.143.0/24';
-      if (ipcheck.inRange(req.ip, ip)) 
+      var source = ipaddr.parse(req.ip), configured = ipaddr.parseCIDR(ip);
+      if (!source.match(configured))
         return console.log("[%s] Received request from %s for app %s but ip configured was %s", new Date().toISOString(), req.ip, target_name, ip);
-
       if (!body.push)
         return console.log("[%s] Received valid hook but without 'push' data for app %s", new Date().toISOString(), target_name);
       if (target_app.branch &&  body.push.changes[0] && body.push.changes[0].new.name.indexOf(target_app.branch) < 0)
