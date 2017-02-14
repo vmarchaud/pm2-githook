@@ -1,6 +1,6 @@
 {
   "name": "pm2-githook",
-  "version": "1.7.2",
+  "version": "1.8.0",
   "description": "receive http hook from multiple source and ask pm2 to reload the application for you",
   "main": "index.js",
   "scripts": {
@@ -19,7 +19,11 @@
     "reload",
     "restart",
     "git",
-    "pull"
+    "pull",
+    "droneci",
+    "ci",
+    "jenkins",
+    "bitbucket"
   ],
   "author": "vmarchaud",
   "license": "MIT",

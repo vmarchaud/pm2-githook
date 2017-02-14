@@ -29,10 +29,13 @@ PM2 module to receive http webhook from github, execute pre/post hook and gracef
     - `service` is the service used to make the http call (`github` is the default)
       - `github` : you'll need to set the same secret as defined in github 
       - `gitlab` : you'll need to set the secret as the token defined in gitlab
-      - `jenkins` : you'll need to set the secret as the ip of the jenkins (you can precise a `branch` entry to make action only for a branch)
-      - `bitbucket` : secret not needed, bitbucket ip range is inside the code (you can precise a `branch` entry to make action only for a branch)
+      - `jenkins` : you'll need to set the secret as the ip of the jenkins (can specify branch)
+      - `bitbucket` : secret not needed, bitbucket ip range is inside the code (can specify branch)
+      - `droneci` : you'll need to set the secret to match the `Authorization` header defined inside the [plugin](http://addons.drone.io/webhook/) (can specify branch)
     - `nopm2` if set to true, we will not reload the application using pm2 (default to `false`)
     - `cwd` if provided we don't resolve the cwd using pm2 and will take this value (defaults to `undefined`)
+
+`(can specify branch)`  mean that you can use a addional configuration to run the posthook on a specific branch
 
 #### How to set these values ?
 
