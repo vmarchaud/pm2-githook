@@ -112,7 +112,7 @@ Worker.prototype.processRequest = function (req) {
     env: process.env,
     shell: true
   };
-  var steps = {
+  var phases = {
     resolveCWD: function resolveCWD(cb) {
       // if cwd is provided, we expect that it isnt a pm2 app
       if (targetApp.cwd) return cb();
@@ -151,14 +151,13 @@ Worker.prototype.processRequest = function (req) {
           logCallback(cb, '[%s] Posthook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
     }
   };
-  async.series([
-    steps.resolveCWD, steps.pullTheApplication, steps.preHook, steps.reloadApplication, steps.postHook
-  ], function (err, results) {
-    if (err) {
-      console.log('[%s] An error has occuring while processing app %s', new Date().toISOString(), targetName);
-      console.error(err);
-    }
-  });
+  async.series(Object.keys(phases).map(function(k){ return phases[k]; }),
+    function (err, results) {
+      if (err) {
+        console.log('[%s] An error has occuring while processing app %s', new Date().toISOString(), targetName);
+        console.error(err);
+      }
+    });
 };
 
 /**
