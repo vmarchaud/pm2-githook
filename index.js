@@ -97,7 +97,6 @@ Worker.prototype.processRequest = function (req) {
   if (targetName.length === 0) return;
 
   var targetApp = this.apps[targetName];
-  console.log('t', this.apps);
   if (!targetApp) return;
 
   var error = this.checkRequest(targetApp, req);
@@ -120,12 +119,7 @@ Worker.prototype.processRequest = function (req) {
 
       // try to get the cwd to execute it correctly
       pm2.describe(targetName, function (err, apps) {
-        apps = [
-            {
-              pm_cwd: '/home/desaroger'
-            }
-        ];
-        // if (err || !apps || apps.length === 0) return cb(err || new Error('Application not found'));
+        if (err || !apps || apps.length === 0) return cb(err || new Error('Application not found'));
 
         // execute the actual command in the cwd of the application
         targetApp.cwd = apps[0].pm_cwd ? apps[0].pm_cwd : apps[0].pm2_env.pm_cwd;
