@@ -158,6 +158,10 @@ Worker.prototype.processRequest = function (req) {
 
   console.log('[%s] Received valid hook for app %s', new Date().toISOString(), targetName);
 
+  var execOptions = {
+    cwd: targetApp.cwd,
+    maxBuffer: 1024 * 500
+  };
   async.series([
     // resolving cwd
     function (callback) {
@@ -187,7 +191,7 @@ Worker.prototype.processRequest = function (req) {
     function (callback) {
       if (!targetApp.prehook) return callback();
 
-      exec(targetApp.prehook, { cwd: targetApp.cwd }, function (err, stdout, stderr) {
+      exec(targetApp.prehook, execOptions, function (err, stdout, stderr) {
         if (err) return callback(err);
 
         console.log('[%s] Pre-hook command has been successfuly executed for app %s', new Date().toISOString(), targetName);
@@ -210,7 +214,7 @@ Worker.prototype.processRequest = function (req) {
       if (!targetApp.posthook) return callback();
 
       // execute the actual command in the cwd of the application
-      exec(targetApp.posthook, { cwd: targetApp.cwd }, function (err, stdout, stderr) {
+      exec(targetApp.posthook, execOptions, function (err, stdout, stderr) {
         if (err) return callback(err);
 
         console.log('[%s] Posthook command has been successfuly executed for app %s', new Date().toISOString(), targetName);
