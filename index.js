@@ -9,7 +9,7 @@ var crypto = require('crypto');
 var pmx = require('pmx');
 var pm2 = require('pm2');
 var util = require('util');
-var exec = require('child_process').exec;
+var spawn = require('child_process').spawn;
 var async = require('async');
 var vizion = require('vizion');
 var ipaddr = require('ipaddr.js');
@@ -97,6 +97,7 @@ Worker.prototype.processRequest = function (req) {
   if (targetName.length === 0) return;
 
   var targetApp = this.apps[targetName];
+  console.log('t', this.apps);
   if (!targetApp) return;
 
   var error = this.checkRequest(targetApp, req);
@@ -109,7 +110,8 @@ Worker.prototype.processRequest = function (req) {
 
   var execOptions = {
     cwd: targetApp.cwd,
-    maxBuffer: 1024 * 500
+    env: process.env,
+    shell: true
   };
   var steps = {
     resolveCWD: function resolveCWD(cb) {
@@ -118,7 +120,12 @@ Worker.prototype.processRequest = function (req) {
 
       // try to get the cwd to execute it correctly
       pm2.describe(targetName, function (err, apps) {
-        if (err || !apps || apps.length === 0) return cb(err || new Error('Application not found'));
+        apps = [
+            {
+              pm_cwd: '/home/desaroger'
+            }
+        ];
+        // if (err || !apps || apps.length === 0) return cb(err || new Error('Application not found'));
 
         // execute the actual command in the cwd of the application
         targetApp.cwd = apps[0].pm_cwd ? apps[0].pm_cwd : apps[0].pm2_env.pm_cwd;
@@ -133,25 +140,25 @@ Worker.prototype.processRequest = function (req) {
     preHook: function preHook(cb) {
       if (!targetApp.prehook) return cb();
 
-      exec(targetApp.prehook, execOptions,
-          logCallback(cb, '[%s] Pre-hook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
+      spawnAsExec(targetApp.prehook, execOptions,
+          logCallback(cb, '[%s] Prehook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
     },
     reloadApplication: function reloadApplication(cb) {
       if (!targetApp.prehook) return cb();
 
-      exec(targetApp.prehook, execOptions,
-          logCallback(cb, '[%s] Pre-hook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
+      spawnAsExec(targetApp.prehook, execOptions,
+          logCallback(cb, '[%s] Successfuly reloaded application %s', new Date().toISOString(), targetName));
     },
     postHook: function postHook(cb) {
       if (!targetApp.posthook) return cb();
 
       // execute the actual command in the cwd of the application
-      exec(targetApp.posthook, execOptions,
+      spawnAsExec(targetApp.posthook, execOptions,
           logCallback(cb, '[%s] Posthook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
     }
   };
   async.series([
-	  steps.resolveCWD, steps.pullTheApplication, steps.preHook, steps.reloadApplication, steps.postHook
+    steps.resolveCWD, steps.pullTheApplication, steps.preHook, steps.reloadApplication, steps.postHook
   ], function (err, results) {
     if (err) {
       console.log('[%s] An error has occuring while processing app %s', new Date().toISOString(), targetName);
@@ -168,85 +175,85 @@ Worker.prototype.processRequest = function (req) {
  * @returns {string|true} True if success or the string of the error if not.
  */
 Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
-	var targetName = reqToAppName(req);
-	switch (targetApp.service) {
-		case 'gitlab': {
-			if (!req.headers['x-gitlab-token']) {
-				return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
-			}
+  var targetName = reqToAppName(req);
+  switch (targetApp.service) {
+    case 'gitlab': {
+      if (!req.headers['x-gitlab-token']) {
+        return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
+      }
 
-			if (req.headers['x-gitlab-token'] !== targetApp.secret) {
-				return util.format('[%s] Received invalid request for app %s (not matching secret)', new Date().toISOString(), targetName);
-			}
-			break;
-		}
-		case 'jenkins': {
-			// ip must match the secret
-			if (req.ip.indexOf(targetApp.secret) < 0) {
-				return util.format('[%s] Received request from %s for app %s but ip configured was %s', new Date().toISOString(), req.ip, targetName, targetApp.secret);
-			}
+      if (req.headers['x-gitlab-token'] !== targetApp.secret) {
+        return util.format('[%s] Received invalid request for app %s (not matching secret)', new Date().toISOString(), targetName);
+      }
+      break;
+    }
+    case 'jenkins': {
+      // ip must match the secret
+      if (req.ip.indexOf(targetApp.secret) < 0) {
+        return util.format('[%s] Received request from %s for app %s but ip configured was %s', new Date().toISOString(), req.ip, targetName, targetApp.secret);
+      }
 
-			var body = JSON.parse(req.body);
-			if (body.build.status !== 'SUCCESS') {
-				return util.format('[%s] Received valid hook but with failure build for app %s', new Date().toISOString(), targetName);
-			}
-			if (targetApp.branch && body.build.scm.branch.indexOf(targetApp.branch) < 0) {
-				return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), body.build.scm.branch, targetName);
-			}
-			break;
-		}
-		case 'droneci': {
-			// Authorization header must match configured secret
-			if (!req.headers['Authorization']) {
-				return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
-			}
-			if (req.headers['Authorization'] !== targetApp.secret) {
-				return util.format('[%s] Received request from %s for app %s but incorrect secret', new Date().toISOString(), req.ip, targetName);
-			}
+      var body = JSON.parse(req.body);
+      if (body.build.status !== 'SUCCESS') {
+        return util.format('[%s] Received valid hook but with failure build for app %s', new Date().toISOString(), targetName);
+      }
+      if (targetApp.branch && body.build.scm.branch.indexOf(targetApp.branch) < 0) {
+        return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), body.build.scm.branch, targetName);
+      }
+      break;
+    }
+    case 'droneci': {
+      // Authorization header must match configured secret
+      if (!req.headers['Authorization']) {
+        return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
+      }
+      if (req.headers['Authorization'] !== targetApp.secret) {
+        return util.format('[%s] Received request from %s for app %s but incorrect secret', new Date().toISOString(), req.ip, targetName);
+      }
 
-			var data = JSON.parse(req.body);
-			if (data.build.status !== 'SUCCESS') {
-				return util.format('[%s] Received valid hook but with failure build for app %s', new Date().toISOString(), targetName);
-			}
-			if (targetApp.branch && data.build.branch.indexOf(targetApp.branch) < 0) {
-				return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), data.build.branch, targetName);
-			}
-			break;
-		}
-		case 'bitbucket': {
-			var tmp = JSON.parse(req.body);
-			var ip = targetApp.secret || '104.192.143.0/24';
-			var configured = ipaddr.parseCIDR(ip);
+      var data = JSON.parse(req.body);
+      if (data.build.status !== 'SUCCESS') {
+        return util.format('[%s] Received valid hook but with failure build for app %s', new Date().toISOString(), targetName);
+      }
+      if (targetApp.branch && data.build.branch.indexOf(targetApp.branch) < 0) {
+        return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), data.build.branch, targetName);
+      }
+      break;
+    }
+    case 'bitbucket': {
+      var tmp = JSON.parse(req.body);
+      var ip = targetApp.secret || '104.192.143.0/24';
+      var configured = ipaddr.parseCIDR(ip);
 
-			if (!tmp.match(configured)) {
-				return util.format('[%s] Received request from %s for app %s but ip configured was %s', new Date().toISOString(), req.ip, targetName, ip);
-			}
-			if (!body.push) {
-				return util.format("[%s] Received valid hook but without 'push' data for app %s", new Date().toISOString(), targetName);
-			}
-			if (targetApp.branch && tmp.push.changes[0] && tmp.push.changes[0].new.name.indexOf(targetApp.branch) < 0) {
-				return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), tmp.push.changes[0].new.name, targetName);
-			}
-			break;
-		}
-		case 'github' :
-		default: {
-			if (!req.headers['x-github-event'] || !req.headers['x-hub-signature']) {
-				return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
-			}
+      if (!tmp.match(configured)) {
+        return util.format('[%s] Received request from %s for app %s but ip configured was %s', new Date().toISOString(), req.ip, targetName, ip);
+      }
+      if (!body.push) {
+        return util.format("[%s] Received valid hook but without 'push' data for app %s", new Date().toISOString(), targetName);
+      }
+      if (targetApp.branch && tmp.push.changes[0] && tmp.push.changes[0].new.name.indexOf(targetApp.branch) < 0) {
+        return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), tmp.push.changes[0].new.name, targetName);
+      }
+      break;
+    }
+    case 'github' :
+    default: {
+      if (!req.headers['x-github-event'] || !req.headers['x-hub-signature']) {
+        return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
+      }
 
-			// compute hash of body with secret, github should send this to verify authenticity
-			var temp = crypto.createHmac('sha1', targetApp.secret);
-			temp.update(req.body, 'utf-8');
-			var hash = temp.digest('hex');
+      // compute hash of body with secret, github should send this to verify authenticity
+      var temp = crypto.createHmac('sha1', targetApp.secret);
+      temp.update(req.body, 'utf-8');
+      var hash = temp.digest('hex');
 
-			if ('sha1=' + hash !== req.headers['x-hub-signature']) {
-				return util.format('[%s] Received invalid request for app %s', new Date().toISOString(), targetName);
-			}
-			break;
-		}
-	}
-	return false;
+      if ('sha1=' + hash !== req.headers['x-hub-signature']) {
+        return util.format('[%s] Received invalid request for app %s', new Date().toISOString(), targetName);
+      }
+      break;
+    }
+  }
+  return false;
 };
 
 /**
@@ -255,7 +262,7 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
 Worker.prototype.start = function () {
   var self = this;
   this.server.listen(this.opts.port, function () {
-    console.log('Server is ready and listen on port %s', self.opts.port);
+    console.log('Server is ready and listen on port %s', self.port);
   });
 };
 
@@ -271,14 +278,14 @@ Worker.prototype.start = function () {
  * @returns {Function} The callback wrapped
  */
 function logCallback(cb, message) {
-	var wrappedArgs = arguments;
-	return function (err, data) {
-		if (err) return cb(err);
+  var wrappedArgs = Array.prototype.slice.call(arguments);
+  return function (err, data) {
+    if (err) return cb(err);
 
-		wrappedArgs.shift();
-		console.log.apply(console, wrappedArgs);
-		cb(data);
-	}
+    wrappedArgs.shift();
+    console.log.apply(console, wrappedArgs);
+    cb(data);
+  }
 }
 
 /**
@@ -292,9 +299,22 @@ function logCallback(cb, message) {
  * @returns {string|null} The name of the app, or null if not found.
  */
 function reqToAppName(req) {
-	var targetName = null;
-	try {
-		targetName = req.url.split('/').pop();
-	}
-	return targetName || null;
+  var targetName = null;
+  try {
+    targetName = req.url.split('/').pop();
+  } catch (e) {}
+  return targetName || null;
+}
+
+/**
+ * Wraps the node spawn function to work as exec (line, options, callback).
+ * This avoid the maxBuffer issue, as no buffer will be stored.
+ *
+ * @param {string} command The line to execute
+ * @param {object} options The options to pass to spawn
+ * @param {function} cb The callback, called with error as first argument
+ */
+function spawnAsExec(command, options, cb) {
+  var child = spawn('eval', [command], options);
+  child.on('close', cb);
 }
