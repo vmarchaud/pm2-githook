@@ -138,7 +138,7 @@ Worker.prototype.processRequest = function (req) {
           logCallback(cb, '[%s] Prehook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
     },
     reloadApplication: function reloadApplication(cb) {
-      if (!targetApp.prehook) return cb();
+      if (!targetApp.nopm2) return cb();
 
       spawnAsExec(targetApp.prehook, execOptions,
           logCallback(cb, '[%s] Successfuly reloaded application %s', new Date().toISOString(), targetName));
