@@ -65,10 +65,12 @@ Worker.prototype._handleHttp = function (req, res) {
   // send instant answer since its useless to respond to the webhook
   res.writeHead(200, { 'Content-Type': 'text/plain' });
   res.write('OK');
-  res.end();
 
   // do something only with post request
-  if (req.method !== 'POST') return;
+  if (req.method !== 'POST') {
+    res.end();
+    return;
+  }
 
   // get source ip
   req.ip = req.headers['x-forwarded-for'] || (req.connection ? req.connection.remoteAddress : false) ||
@@ -85,6 +87,8 @@ Worker.prototype._handleHttp = function (req, res) {
   }).on('end', function () {
     self.processRequest(req);
   });
+
+  res.end();
 };
 
 /**
@@ -217,11 +221,12 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
       var tmp = JSON.parse(req.body);
       var ip = targetApp.secret || '104.192.143.0/24';
       var configured = ipaddr.parseCIDR(ip);
+      var source = ipaddr.parse(req.ip);
 
-      if (!tmp.match(configured)) {
+      if (!source.match(configured)) {
         return util.format('[%s] Received request from %s for app %s but ip configured was %s', new Date().toISOString(), req.ip, targetName, ip);
       }
-      if (!body.push) {
+      if (!tmp.push) {
         return util.format("[%s] Received valid hook but without 'push' data for app %s", new Date().toISOString(), targetName);
       }
       if (targetApp.branch && tmp.push.changes[0] && tmp.push.changes[0].new.name.indexOf(targetApp.branch) < 0) {
