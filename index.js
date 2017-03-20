@@ -142,7 +142,7 @@ Worker.prototype.processRequest = function (req) {
           logCallback(cb, '[%s] Prehook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
     },
     reloadApplication: function reloadApplication(cb) {
-      if (!targetApp.nopm2) return cb();
+      if (targetApp.nopm2) return cb();
 
       pm2.gracefulReload(targetName,
 	    logCallback(cb, '[%s] Successfuly reloaded application %s', new Date().toISOString(), targetName));
@@ -282,7 +282,7 @@ function logCallback(cb, message) {
 
     wrappedArgs.shift();
     console.log.apply(console, wrappedArgs);
-    cb(data);
+    cb();
   }
 }
 
