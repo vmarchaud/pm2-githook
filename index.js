@@ -351,6 +351,8 @@ function timezoneOffset(offset) {
  */
 function localeDateString() {
 	const d = new Date();
-	let res = `${pad(d.getDate())}-${pad(d.getMonth())}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}:${pad(d.getMilliseconds())} ${}`;
+	let res = `${pad(d.getDate())}-${pad(d.getMonth())}-${d.getFullYear()} ` +
+		`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}:${pad(d.getMilliseconds())} `+
+		`${timezoneOffset(d.getTimezoneOffset())}`;
 
 }
