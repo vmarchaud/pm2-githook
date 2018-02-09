@@ -4,7 +4,6 @@
  * can be found in the LICENSE file.
  */
 
-// var rotatingFileStream = require('rotating-file-stream');
 var http = require('http');
 var crypto = require('crypto');
 var pmx = require('pmx');
@@ -14,12 +13,14 @@ var spawn = require('child_process').spawn;
 var async = require('async');
 var vizion = require('vizion');
 var ipaddr = require('ipaddr.js');
+var rfs = require('rotating-file-stream');
 
-// var logStream = rotatingFileStream('githook.log', {
-// 	interval: '1d',
-// 	maxFiles: 10,
-// 	path: '/smartprix/logs/server_logs',
-// });
+var logStream = rfs('githookHooks.log', {
+	interval: '1d',
+	maxFiles: 10,
+	path: '/smartprix/logs/server_logs/pm2',
+});
+
 /**
  * Init pmx module
  */
@@ -125,7 +126,6 @@ Worker.prototype.processRequest = function (req) {
     cwd: targetApp.cwd,
     env: process.env,
 	shell: true,
-	stdio: ['ignore', process.stdout, process.stderr],
   };
   var phases = {
     resolveCWD: function resolveCWD(cb) {
@@ -140,12 +140,14 @@ Worker.prototype.processRequest = function (req) {
         targetApp.cwd = apps[0].pm_cwd ? apps[0].pm_cwd : apps[0].pm2_env.pm_cwd;
         return cb();
       });
-    },
+	},
+	
     pullTheApplication: function pullTheApplication(cb) {
       vizion.update({
         folder: targetApp.cwd
       }, logCallback(cb, '[%s] Successfuly pulled application %s', localeDateString(), targetName));
-    },
+	},
+	
     preHook: function preHook(cb) {
       if (!targetApp.prehook) return cb();
 
@@ -157,13 +159,15 @@ Worker.prototype.processRequest = function (req) {
 		function() { oldSpawns[targetName].prehook = undefined; });
 		  
 	  oldSpawns[targetName].prehook = child;
-    },
+	},
+	
     reloadApplication: function reloadApplication(cb) {
       if (targetApp.nopm2) return cb();
 
       pm2.gracefulReload(targetName,
 	    logCallback(cb, '[%s] Successfuly reloaded application %s', localeDateString(), targetName));
-    },
+	},
+	
     postHook: function postHook(cb) {
       if (!targetApp.posthook) return cb();
 
@@ -331,10 +335,20 @@ function reqToAppName(req) {
  */
 function spawnAsExec(command, options, cb, deleteOldSpawn = function () {}) {
   var child = spawn('eval', [command], options);
+  
   child.on('close', function () {
-	  deleteOldSpawn();
-	  cb();
+	deleteOldSpawn();
+	cb();
   });
+  
+  child.stderr.on('data', function (data) {
+	console.error('[%s] Hook command error : %s', localeDateString(), data.toString());
+  });
+
+  child.stdout.on('data', function (data) {
+	logStream.write(`[${localeDateString()}] Hook command log : ${data.toString()}`);
+  });
+ 
   return child;
 }
 
