@@ -159,7 +159,7 @@ Worker.prototype.processRequest = function (req) {
     function (err, results) {
       if (err) {
         console.log('[%s] An error has occuring while processing app %s', new Date().toISOString(), targetName);
-        console.error(err);
+        console.error('App : ', targetName, '\nError: ', JSON.stringify(err));
       }
     });
 };
