@@ -20,7 +20,7 @@ var ipaddr = require('ipaddr.js');
 pmx.initModule({}, function (err, conf) {
   pm2.connect(function (err2) {
     if (err || err2) {
-      console.error('[%s] Error: %s', new Date().toISOString(), JSON.stringify(err || err2));
+      console.error('[%s] Error: %s', localeDateString(), JSON.stringify(err || err2));
       return process.exit(1);
     }
     // init the worker only if we can connect to pm2
@@ -109,11 +109,11 @@ Worker.prototype.processRequest = function (req) {
 
   var error = this.checkRequest(targetApp, req);
   if (error) {
-    console.log('[%s] App: %s\nError: %s', new Date().toISOString(), targetName, JSON.stringify(error));
+    console.log('[%s] App: %s\nError: %s', localeDateString(), targetName, JSON.stringify(error));
     return;
   }
 
-  console.log('[%s] Received valid hook for app %s', new Date().toISOString(), targetName);
+  console.log('[%s] Received valid hook for app %s', localeDateString(), targetName);
 
   var execOptions = {
     cwd: targetApp.cwd,
@@ -137,16 +137,16 @@ Worker.prototype.processRequest = function (req) {
     pullTheApplication: function pullTheApplication(cb) {
       vizion.update({
         folder: targetApp.cwd
-      }, logCallback(cb, '[%s] Successfuly pulled application %s', new Date().toISOString(), targetName));
+      }, logCallback(cb, '[%s] Successfuly pulled application %s', localeDateString(), targetName));
     },
     preHook: function preHook(cb) {
       if (!targetApp.prehook) return cb();
 
 	  const oldChild = oldSpawns[targetName].prehook;
-	  if (oldChild) logCallback(oldChild.kill, '[%s] Killed old prehook process as new request received %s', new Date().toISOString(), targetName);
+	  if (oldChild) logCallback(oldChild.kill, '[%s] Killed old prehook process as new request received %s', localeDateString(), targetName);
 	  
 	  const child = spawnAsExec(targetApp.prehook, execOptions, 
-		logCallback(cb, '[%s] Prehook command has been successfuly executed for app %s', new Date().toISOString(), targetName),
+		logCallback(cb, '[%s] Prehook command has been successfuly executed for app %s', localeDateString(), targetName),
 		function() { oldSpawns[targetName].prehook = undefined; });
 		  
 	  oldSpawns[targetName].prehook = child;
@@ -155,21 +155,21 @@ Worker.prototype.processRequest = function (req) {
       if (targetApp.nopm2) return cb();
 
       pm2.gracefulReload(targetName,
-	    logCallback(cb, '[%s] Successfuly reloaded application %s', new Date().toISOString(), targetName));
+	    logCallback(cb, '[%s] Successfuly reloaded application %s', localeDateString(), targetName));
     },
     postHook: function postHook(cb) {
       if (!targetApp.posthook) return cb();
 
       // execute the actual command in the cwd of the application
       spawnAsExec(targetApp.posthook, execOptions,
-          logCallback(cb, '[%s] Posthook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
+          logCallback(cb, '[%s] Posthook command has been successfuly executed for app %s', localeDateString(), targetName));
     }
   };
   async.series(Object.keys(phases).map(function(k){ return phases[k]; }),
     function (err, results) {
       if (err) {
-        console.log('[%s] An error has occuring while processing app %s', new Date().toISOString(), targetName);
-        console.error('[%s] App : %s\nError: %s', new Date().toISOString(), targetName, JSON.stringify(err));
+        console.log('[%s] An error has occuring while processing app %s', localeDateString(), targetName);
+        console.error('[%s] App : %s\nError: %s', localeDateString(), targetName, JSON.stringify(err));
       }
     });
 };
@@ -186,44 +186,44 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
   switch (targetApp.service) {
     case 'gitlab': {
       if (!req.headers['x-gitlab-token']) {
-        return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
+        return util.format('[%s] Received invalid request for app %s (no headers found)', localeDateString(), targetName);
       }
 
       if (req.headers['x-gitlab-token'] !== targetApp.secret) {
-        return util.format('[%s] Received invalid request for app %s (not matching secret)', new Date().toISOString(), targetName);
+        return util.format('[%s] Received invalid request for app %s (not matching secret)', localeDateString(), targetName);
       }
       break;
     }
     case 'jenkins': {
       // ip must match the secret
       if (req.ip.indexOf(targetApp.secret) < 0) {
-        return util.format('[%s] Received request from %s for app %s but ip configured was %s', new Date().toISOString(), req.ip, targetName, targetApp.secret);
+        return util.format('[%s] Received request from %s for app %s but ip configured was %s', localeDateString(), req.ip, targetName, targetApp.secret);
       }
 
       var body = JSON.parse(req.body);
       if (body.build.status !== 'SUCCESS') {
-        return util.format('[%s] Received valid hook but with failure build for app %s', new Date().toISOString(), targetName);
+        return util.format('[%s] Received valid hook but with failure build for app %s', localeDateString(), targetName);
       }
       if (targetApp.branch && body.build.scm.branch.indexOf(targetApp.branch) < 0) {
-        return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), body.build.scm.branch, targetName);
+        return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', localeDateString(), body.build.scm.branch, targetName);
       }
       break;
     }
     case 'droneci': {
       // Authorization header must match configured secret
       if (!req.headers['Authorization']) {
-        return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
+        return util.format('[%s] Received invalid request for app %s (no headers found)', localeDateString(), targetName);
       }
       if (req.headers['Authorization'] !== targetApp.secret) {
-        return util.format('[%s] Received request from %s for app %s but incorrect secret', new Date().toISOString(), req.ip, targetName);
+        return util.format('[%s] Received request from %s for app %s but incorrect secret', localeDateString(), req.ip, targetName);
       }
 
       var data = JSON.parse(req.body);
       if (data.build.status !== 'SUCCESS') {
-        return util.format('[%s] Received valid hook but with failure build for app %s', new Date().toISOString(), targetName);
+        return util.format('[%s] Received valid hook but with failure build for app %s', localeDateString(), targetName);
       }
       if (targetApp.branch && data.build.branch.indexOf(targetApp.branch) < 0) {
-        return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), data.build.branch, targetName);
+        return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', localeDateString(), data.build.branch, targetName);
       }
       break;
     }
@@ -234,20 +234,20 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
       var source = ipaddr.parse(req.ip);
 
       if (!source.match(configured)) {
-        return util.format('[%s] Received request from %s for app %s but ip configured was %s', new Date().toISOString(), req.ip, targetName, ip);
+        return util.format('[%s] Received request from %s for app %s but ip configured was %s', localeDateString(), req.ip, targetName, ip);
       }
       if (!tmp.push) {
-        return util.format("[%s] Received valid hook but without 'push' data for app %s", new Date().toISOString(), targetName);
+        return util.format("[%s] Received valid hook but without 'push' data for app %s", localeDateString(), targetName);
       }
       if (targetApp.branch && tmp.push.changes[0] && tmp.push.changes[0].new.name.indexOf(targetApp.branch) < 0) {
-        return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), tmp.push.changes[0].new.name, targetName);
+        return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', localeDateString(), tmp.push.changes[0].new.name, targetName);
       }
       break;
     }
     case 'github' :
     default: {
       if (!req.headers['x-github-event'] || !req.headers['x-hub-signature']) {
-        return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
+        return util.format('[%s] Received invalid request for app %s (no headers found)', localeDateString(), targetName);
       }
 
       // compute hash of body with secret, github should send this to verify authenticity
@@ -256,7 +256,7 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
       var hash = temp.digest('hex');
 
       if ('sha1=' + hash !== req.headers['x-hub-signature']) {
-        return util.format('[%s] Received invalid request for app %s', new Date().toISOString(), targetName);
+        return util.format('[%s] Received invalid request for app %s', localeDateString(), targetName);
       }
       break;
     }
@@ -270,7 +270,7 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
 Worker.prototype.start = function () {
   var self = this;
   this.server.listen(this.opts.port, function () {
-    console.log('[%s] Server is ready and listen on port %s', new Date().toISOString(), self.port);
+    console.log('[%s] Server is ready and listen on port %s', localeDateString(), self.port);
   });
 };
 
@@ -329,4 +329,28 @@ function spawnAsExec(command, options, cb, deleteOldSpawn) {
 	  cb();
   });
   return child;
+}
+
+function pad(str) {
+	str = str.toString();
+	if (str.length >= 2) return str.substr(0, 2);
+	str = '0' + str;
+	return str;
+}
+
+function timezoneOffset(offset) {
+	const sign = offset < 0 ? '+' : '-';
+	offset = Math.abs(offset);
+	const hours = Math.floor(offset/60);
+	const mins = offset - (60 * hours);
+	return `${sign}${pad(hours)}:${pad(mins)}`;
+}
+
+/**
+ * Returns current time in local timezone in format : DD-MM-YYYY HH:mm:ss:SS Z
+ */
+function localeDateString() {
+	const d = new Date();
+	let res = `${pad(d.getDate())}-${pad(d.getMonth())}-${d.getFullYear()} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}:${pad(d.getMilliseconds())} ${}`;
+
 }
