@@ -14,7 +14,6 @@ var async = require('async');
 var vizion = require('vizion');
 var ipaddr = require('ipaddr.js');
 
-var localeDateString;
 /**
  * Init pmx module
  */
@@ -350,10 +349,9 @@ function timezoneOffset(offset) {
 /**
  * Returns current time in local timezone in format : DD-MM-YYYY HH:mm:ss:SS Z
  */
-localeDateString = function() {
+function localeDateString() {
 	const d = new Date();
-	let res = `${pad(d.getDate())}-${pad(d.getMonth())}-${d.getFullYear()} ` +
+	return `${pad(d.getDate())}-${pad(d.getMonth())}-${d.getFullYear()} ` +
 		`${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}:${pad(d.getMilliseconds())} `+
 		`${timezoneOffset(d.getTimezoneOffset())}`;
-
 }
