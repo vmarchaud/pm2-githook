@@ -329,7 +329,7 @@ function reqToAppName(req) {
  * @param {object} options The options to pass to spawn
  * @param {function} cb The callback, called with error as first argument
  */
-function spawnAsExec(command, options, cb, deleteOldSpawn) {
+function spawnAsExec(command, options, cb, deleteOldSpawn = function () {}) {
   var child = spawn('eval', [command], options);
   child.on('close', function () {
 	  deleteOldSpawn();
