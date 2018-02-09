@@ -20,7 +20,7 @@ var ipaddr = require('ipaddr.js');
 pmx.initModule({}, function (err, conf) {
   pm2.connect(function (err2) {
     if (err || err2) {
-      console.error(err || err2);
+      console.error('[%s] Error: %s', new Date().toISOString(), JSON.stringify(err || err2));
       return process.exit(1);
     }
     // init the worker only if we can connect to pm2
@@ -109,7 +109,7 @@ Worker.prototype.processRequest = function (req) {
 
   var error = this.checkRequest(targetApp, req);
   if (error) {
-    console.log(error);
+    console.log('[%s] App: %s\nError: %s', new Date().toISOString(), targetName, JSON.stringify(error));
     return;
   }
 
@@ -169,7 +169,7 @@ Worker.prototype.processRequest = function (req) {
     function (err, results) {
       if (err) {
         console.log('[%s] An error has occuring while processing app %s', new Date().toISOString(), targetName);
-        console.error('App : ', targetName, '\nError: ', JSON.stringify(err));
+        console.error('[%s] App : %s\nError: %s', new Date().toISOString(), targetName, JSON.stringify(err));
       }
     });
 };
@@ -270,7 +270,7 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
 Worker.prototype.start = function () {
   var self = this;
   this.server.listen(this.opts.port, function () {
-    console.log('Server is ready and listen on port %s', self.port);
+    console.log('[%s] Server is ready and listen on port %s', new Date().toISOString(), self.port);
   });
 };
 
