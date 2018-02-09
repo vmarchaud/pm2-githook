@@ -91,6 +91,8 @@ Worker.prototype._handleHttp = function (req, res) {
   res.end();
 };
 
+let oldSpawns = {};
+
 /**
  * Main function of the module
  *
@@ -99,6 +101,8 @@ Worker.prototype._handleHttp = function (req, res) {
 Worker.prototype.processRequest = function (req) {
   var targetName = reqToAppName(req);
   if (targetName.length === 0) return;
+
+  if (!oldSpawns[targetName]) oldSpawns[targetName] = {};
 
   var targetApp = this.apps[targetName];
   if (!targetApp) return;
@@ -138,8 +142,14 @@ Worker.prototype.processRequest = function (req) {
     preHook: function preHook(cb) {
       if (!targetApp.prehook) return cb();
 
-      spawnAsExec(targetApp.prehook, execOptions,
-          logCallback(cb, '[%s] Prehook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
+	  const oldChild = oldSpawns[targetName].prehook;
+	  if (oldChild) logCallback(oldChild.kill, '[%s] Killed old prehook process as new request received %s', new Date().toISOString(), targetName);
+	  
+	  const child = spawnAsExec(targetApp.prehook, execOptions, 
+		logCallback(cb, '[%s] Prehook command has been successfuly executed for app %s', new Date().toISOString(), targetName),
+		function() { oldSpawns[targetName].prehook = undefined; });
+		  
+	  oldSpawns[targetName].prehook = child;
     },
     reloadApplication: function reloadApplication(cb) {
       if (targetApp.nopm2) return cb();
@@ -312,7 +322,11 @@ function reqToAppName(req) {
  * @param {object} options The options to pass to spawn
  * @param {function} cb The callback, called with error as first argument
  */
-function spawnAsExec(command, options, cb) {
+function spawnAsExec(command, options, cb, deleteOldSpawn) {
   var child = spawn('eval', [command], options);
-  child.on('close', cb);
+  child.on('close', function () {
+	  deleteOldSpawn();
+	  cb();
+  });
+  return child;
 }
