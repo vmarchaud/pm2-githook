@@ -4,6 +4,7 @@
  * can be found in the LICENSE file.
  */
 
+var rotatingFileStream = require('rotating-file-stream');
 var http = require('http');
 var crypto = require('crypto');
 var pmx = require('pmx');
@@ -14,6 +15,11 @@ var async = require('async');
 var vizion = require('vizion');
 var ipaddr = require('ipaddr.js');
 
+var logStream = rotatingFileStream('githook.log', {
+	interval: '1d',
+	maxFiles: 10,
+	path: '/smartprix/logs/server_logs',
+});
 /**
  * Init pmx module
  */
@@ -118,7 +124,8 @@ Worker.prototype.processRequest = function (req) {
   var execOptions = {
     cwd: targetApp.cwd,
     env: process.env,
-    shell: true
+	shell: true,
+	stdio: ['ignore', logStream, process.stderr],
   };
   var phases = {
     resolveCWD: function resolveCWD(cb) {
