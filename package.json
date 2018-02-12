@@ -47,8 +47,8 @@
     "extends": "smartprix",
     "rules": {
       "no-await-in-loop": 0,
-	  "no-console": 0,
-	  "complexity": "off"
+      "no-console": 0,
+      "complexity": "off"
     }
   },
   "config": {

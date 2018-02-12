@@ -50,8 +50,8 @@ function logCallback(cb, ...args) {
 	return function (err) {
 		if (err) return cb(err);
 
-		console.log(args);
-		logStream.write(util.format(args));
+		console.log(...args);
+		logStream.write(util.format(...args));
 		return cb();
 	};
 }
