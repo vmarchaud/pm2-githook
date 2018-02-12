@@ -111,11 +111,11 @@ Worker.prototype.processRequest = function (req) {
 
 	const error = this.checkRequest(targetApp, req);
 	if (error) {
-		console.log('[%s] App: %s\nError: %s', localeDateString(), targetName, JSON.stringify(error));
+		logCallback(() => {}, '[%s] App: %s\nError: %s', localeDateString(), targetName, JSON.stringify(error));
 		return;
 	}
 
-	console.log('[%s] Received valid hook for app %s', localeDateString(), targetName);
+	logCallback(() => {}, '[%s] Received valid hook for app %s', localeDateString(), targetName);
 
 	const execOptions = {
 		cwd: targetApp.cwd,
@@ -184,8 +184,10 @@ Worker.prototype.processRequest = function (req) {
 	async.series(Object.keys(phases).map(k => phases[k]),
 		(err) => {
 			if (err) {
-				console.log('[%s] An error has occuring while processing app %s', localeDateString(), targetName);
-				console.error('[%s] App : %s\nError: %s', localeDateString(), targetName, JSON.stringify(err));
+				logCallback(() => {}, '[%s] An error has occuring while processing app %s', localeDateString(), targetName);
+				const log = util.format('[%s] App : %s\nError: %s', localeDateString(), targetName, JSON.stringify(err));
+				logCallback(() => {}, log);
+				console.error(log);
 			}
 		});
 };
@@ -289,6 +291,6 @@ Worker.prototype.checkRequest = function (targetApp, req) {
 Worker.prototype.start = function () {
 	const self = this;
 	this.server.listen(this.opts.port, () => {
-		console.log('[%s] Server is ready and listen on port %s', localeDateString(), self.port);
+		logCallback(() => {}, '[%s] Server is ready and listen on port %s', localeDateString(), self.port);
 	});
 };

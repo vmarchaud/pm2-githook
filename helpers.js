@@ -1,7 +1,8 @@
 const spawn = require('child_process').spawn;
+const util = require('util');
 const rfs = require('rotating-file-stream');
 
-const logStream = rfs('githookHooks.log', {
+const logStream = rfs('pm2-githook2.log', {
 	interval: '1d',
 	maxFiles: 10,
 	path: '/smartprix/logs/server_logs/pm2',
@@ -23,7 +24,8 @@ function timezoneOffset(offset) {
 }
 
 /**
- * Returns current time in local timezone in format : DD-MM-YYYY HH:mm:ss:SS Z
+ * Get local time in ISO format
+ * @returns Current time in local timezone in format : DD-MM-YYYY HH:mm:ss:SS Z
  */
 function localeDateString() {
 	const d = new Date();
@@ -45,12 +47,11 @@ function localeDateString() {
  * @returns {Function} The callback wrapped
  */
 function logCallback(cb, ...args) {
-	const wrappedArgs = Array.prototype.slice.call(args);
 	return function (err) {
 		if (err) return cb(err);
 
-		wrappedArgs.shift();
-		console.log(...wrappedArgs);
+		console.log(args);
+		logStream.write(util.format(args));
 		return cb();
 	};
 }
@@ -91,7 +92,9 @@ function spawnAsExec(command, options, cb, deleteOldSpawn = function () {}) {
 	});
 
 	child.stderr.on('data', (data) => {
-		console.error('[%s] Hook command error : %s', localeDateString(), data.toString());
+		const log = util.format('[%s] Hook command error : %s', localeDateString(), data.toString());
+		console.error(log);
+		logStream.write(log);
 	});
 
 	child.stdout.on('data', (data) => {
