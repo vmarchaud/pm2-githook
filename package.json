@@ -1,6 +1,6 @@
 {
-  "name": "pm2-githook",
-  "version": "1.9.1",
+  "name": "pm2-githook2",
+  "version": "1.9.2",
   "description": "receive http hook from multiple source and ask pm2 to reload the application for you",
   "main": "index.js",
   "scripts": {
@@ -8,7 +8,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/vmarchaud/pm2-githook.git"
+    "url": "git+https://github.com/rohit-smpx/pm2-githook.git"
   },
   "keywords": [
     "pm2",
@@ -25,12 +25,12 @@
     "jenkins",
     "bitbucket"
   ],
-  "author": "vmarchaud",
+  "author": "rohit-smpx",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/vmarchaud/pm2-githook/issues"
+    "url": "https://github.com/rohit-smpx/pm2-githook/issues"
   },
-  "homepage": "https://github.com/vmarchaud/pm2-githook#readme",
+  "homepage": "https://github.com/rohit-smpx/pm2-githook#readme",
   "dependencies": {
     "async": "^2.1.1",
     "ipaddr.js": "^1.2.0",
@@ -38,6 +38,17 @@
     "pmx": "^0.6.8",
     "rotating-file-stream": "^1.3.4",
     "vizion": "^0.2.13"
+  },
+  "devDependencies": {
+    "eslint": "4.13.1",
+    "eslint-config-smartprix": "^3.3.1"
+  },
+  "eslintConfig": {
+    "extends": "smartprix",
+    "rules": {
+      "no-await-in-loop": 0,
+      "no-console": 0
+    }
   },
   "config": {
     "apps": {
