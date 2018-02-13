@@ -59,7 +59,8 @@
         "posthook": "echo done",
         "service": "github"
       }
-    },
+	},
+	"logDir": "/smartprix/logs/server_logs/pm2",
     "port": 8888
   }
 }

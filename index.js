@@ -1,5 +1,5 @@
 /**
- * Copyright 2016 vmarchaud. All rights reserved.
+ * Copyright 2018 vmarchaud, rohit-smpx. All rights reserved.
  * Use of this source code is governed by a license that
  * can be found in the LICENSE file.
  */
@@ -13,7 +13,14 @@ const async = require('async');
 const vizion = require('vizion');
 const ipaddr = require('ipaddr.js');
 
-const {localeDateString, logCallback, reqToAppName, spawnAsExec} = require('./helpers');
+const {
+	logger,
+	initLogStream,
+	logCallback,
+	reqToAppName,
+	spawnAsExec,
+	localeDateString,
+} = require('./helpers');
 
 /**
  * Constructor of our worker
@@ -28,7 +35,7 @@ const Worker = function (opts) {
 	}
 
 	this.opts = opts;
-	this.port = this.opts.port || 8888;
+	this.port = opts.port || 8888;
 	this.apps = opts.apps;
 
 	if (typeof (this.apps) !== 'object') {
@@ -43,9 +50,10 @@ const Worker = function (opts) {
  * Init pmx module
  */
 pmx.initModule({}, (err, conf) => {
+	initLogStream(conf.logDir);
 	pm2.connect((err2) => {
 		if (err || err2) {
-			console.error('[%s] Error: %s', localeDateString(), JSON.stringify(err || err2));
+			logger.error('[%s] Error: %s', localeDateString(), JSON.stringify(err || err2));
 			process.exit(1);
 			return;
 		}
@@ -111,11 +119,11 @@ Worker.prototype.processRequest = function (req) {
 
 	const error = this.checkRequest(targetApp, req);
 	if (error) {
-		logCallback(() => {}, '[%s] App: %s\nError: %s', localeDateString(), targetName, JSON.stringify(error));
+		logger.log('[%s] App: %s\nError: %s', localeDateString(), targetName, JSON.stringify(error));
 		return;
 	}
 
-	logCallback(() => {}, '[%s] Received valid hook for app %s', localeDateString(), targetName);
+	logger.log('[%s] Received valid hook for app %s', localeDateString(), targetName);
 
 	const execOptions = {
 		cwd: targetApp.cwd,
@@ -156,8 +164,11 @@ Worker.prototype.processRequest = function (req) {
 			if (oldChild) logCallback(oldChild.kill, '[%s] Killed old prehook process as new request received %s', localeDateString(), targetName);
 
 			const child = spawnAsExec(targetApp.prehook, execOptions,
-				logCallback(cb, '[%s] Prehook command has been successfuly executed for app %s', localeDateString(), targetName),
-				() => { oldSpawns[targetName].prehook = undefined });
+				logCallback(() => {
+					oldSpawns[targetName].prehook = undefined;
+					cb();
+				}, '[%s] Prehook command has been successfuly executed for app %s', localeDateString(), targetName),
+			);
 
 			oldSpawns[targetName].prehook = child;
 		},
@@ -184,10 +195,8 @@ Worker.prototype.processRequest = function (req) {
 	async.series(Object.keys(phases).map(k => phases[k]),
 		(err) => {
 			if (err) {
-				logCallback(() => {}, '[%s] An error has occuring while processing app %s', localeDateString(), targetName);
-				const log = util.format('[%s] App : %s\nError: %s', localeDateString(), targetName, JSON.stringify(err));
-				logCallback(() => {}, log);
-				console.error(log);
+				logger.log('[%s] An error has occuring while processing app %s', localeDateString(), targetName);
+				logger.error('[%s] App : %s\nError: %s', localeDateString(), targetName, JSON.stringify(err));
 			}
 		});
 };
@@ -291,6 +300,6 @@ Worker.prototype.checkRequest = function (targetApp, req) {
 Worker.prototype.start = function () {
 	const self = this;
 	this.server.listen(this.opts.port, () => {
-		logCallback(() => {}, '[%s] Server is ready and listen on port %s', localeDateString(), self.port);
+		logger.log('[%s] Server is ready and listen on port %s', localeDateString(), self.port);
 	});
 };

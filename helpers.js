@@ -2,11 +2,15 @@ const spawn = require('child_process').spawn;
 const util = require('util');
 const rfs = require('rotating-file-stream');
 
-const logStream = rfs('pm2-githook2.log', {
-	interval: '1d',
-	maxFiles: 10,
-	path: '/smartprix/logs/server_logs/pm2',
-});
+let logStream;
+
+function initLogStream(logDir = '/smartprix/logs/server_logs/pm2') {
+	logStream = rfs('pm2-githook2.log', {
+		interval: '1d',
+		maxFiles: 10,
+		path: logDir,
+	});
+}
 
 function pad(str) {
 	str = str.toString();
@@ -34,10 +38,22 @@ function localeDateString() {
 		`${timezoneOffset(d.getTimezoneOffset())}`;
 }
 
+const logger = {
+	log(...args) {
+		console.log(...args);
+		logStream.write(util.format(...args));
+	},
+
+	error(...args) {
+		console.error(...args);
+		logStream.write(util.format(...args));
+	},
+};
+
 
 /**
  * Executes the callback, but in case of success shows a message.
- * Also accepts extra arguments to pass to console.log.
+ * Also accepts extra arguments to pass to logger.
  *
  * Example:
  * logCallback(next, '% worked perfect', appName)
@@ -49,9 +65,7 @@ function localeDateString() {
 function logCallback(cb, ...args) {
 	return function (err) {
 		if (err) return cb(err);
-
-		console.log(...args);
-		logStream.write(util.format(...args));
+		logger.log(...args);
 		return cb();
 	};
 }
@@ -71,7 +85,7 @@ function reqToAppName(req) {
 	try {
 		targetName = req.url.split('/').pop();
 	}
-	catch (e) { console.error(e) }
+	catch (e) { logger.error(e) }
 	return targetName || null;
 }
 
@@ -83,18 +97,15 @@ function reqToAppName(req) {
  * @param {object} options The options to pass to spawn
  * @param {function} cb The callback, called with error as first argument
  */
-function spawnAsExec(command, options, cb, deleteOldSpawn = function () {}) {
+function spawnAsExec(command, options, cb) {
 	const child = spawn('eval', [command], options);
 
 	child.on('close', () => {
-		deleteOldSpawn();
 		cb();
 	});
 
 	child.stderr.on('data', (data) => {
-		const log = util.format('[%s] Hook command error : %s', localeDateString(), data.toString());
-		console.error(log);
-		logStream.write(log);
+		logger.error('[%s] Hook command error : %s', localeDateString(), data.toString());
 	});
 
 	child.stdout.on('data', (data) => {
@@ -106,8 +117,10 @@ function spawnAsExec(command, options, cb, deleteOldSpawn = function () {}) {
 
 
 module.exports = {
-	localeDateString,
+	logger,
+	initLogStream,
 	logCallback,
 	reqToAppName,
 	spawnAsExec,
+	localeDateString,
 };
