@@ -60,7 +60,7 @@
         "service": "github"
       }
 	},
-	"logDir": "/smartprix/logs/server_logs/pm2",
+	"logDir": "/smartprix/logs/server_logs/pm2/githook",
     "port": 8888
   }
 }
