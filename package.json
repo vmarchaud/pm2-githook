@@ -1,17 +1,18 @@
 {
   "name": "pm2-githook2",
   "version": "1.9.2",
-  "description": "receive http hook from multiple source and ask pm2 to reload the application for you",
+  "description": "A PM2 module to receive webhook requests from github/gitlab and ask pm2 to reload the application for you ",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/rohit-smpx/pm2-githook.git"
+    "url": "git+https://github.com/rohit-smpx/pm2-githook2.git"
   },
   "keywords": [
-    "pm2",
+	"pm2",
+	"pm2-module",
     "github",
     "gitlab",
     "webhook",
@@ -28,9 +29,9 @@
   "author": "rohit-smpx",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/rohit-smpx/pm2-githook/issues"
+    "url": "https://github.com/rohit-smpx/pm2-githook2/issues"
   },
-  "homepage": "https://github.com/rohit-smpx/pm2-githook#readme",
+  "homepage": "https://github.com/rohit-smpx/pm2-githook2#readme",
   "dependencies": {
     "async": "^2.1.1",
     "ipaddr.js": "^1.2.0",

@@ -61,4 +61,5 @@ e.g:
 
 ## Credits
 
-[@vmarchaud](https://github.com/vmarchaud) for the original [pm2-githook](https://github.com/vmarchaud/pm2-githook) module on which this is based. 
+[@vmarchaud](https://github.com/vmarchaud) for the original [pm2-githook](https://github.com/vmarchaud/pm2-githook) module on which this is based.
+And to any other [contributors](https://github.com/vmarchaud/pm2-githook/graphs/contributors) of the original module.
