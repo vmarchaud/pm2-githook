@@ -2,7 +2,7 @@
 
 PM2 module to receive http webhook from github, execute pre/post hook and gracefull reload the application using pm2.
 
-This is a fork of the original pm2-githook(https://github.com/vmarchaud/pm2-githook) by vmarchaud. I found the error reporting lacking, ended up adding a few things like:
+This is a fork of the original [pm2-githook](https://github.com/vmarchaud/pm2-githook) by vmarchaud. I found the error reporting lacking, ended up adding a few things like:
 * A different log dir which includes the hook outputs (didn't want to populate pm2 logs with anything more than success/error messages)
 * Automatic kill of any old running hooks for when your git pushes happen quicker than your hook completes
 
@@ -61,4 +61,4 @@ e.g:
 
 ## Credits
 
-@vmarchaud for the original pm2-githook(https://github.com/vmarchaud/pm2-githook) module on which this is based. 
+[@vmarchaud](https://github.com/vmarchaud) for the original [pm2-githook](https://github.com/vmarchaud/pm2-githook) module on which this is based. 
