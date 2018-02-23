@@ -2,14 +2,17 @@
 
 PM2 module to receive http webhook from github, execute pre/post hook and gracefull reload the application using pm2.
 
-## Install
+## Install/Update
 
-`pm2 install pm2-githook`
+`pm2 install rohit-smpx/pm2-githook2`
+
+For now this is the way, until I publish this to npm.
 
 ## Configure
 
 - `port` (Defaults to `8888`) : The port that will be used by the http server to receive hooks.
 - `apps` : Contains definition of applications in JSON : 
+- `logDir` : The log dir where all the logs will be stored, saved with an internal logrotate. This will also have the output of all the hooks output unlike pm2's logs of the module, which will only have success and error messages.
 
     ```json
       {
@@ -50,4 +53,8 @@ e.g:
 
 ## Uninstall
 
-`pm2 uninstall pm2-githook
+`pm2 uninstall pm2-githook2`
+
+## Credits
+
+@vmarchaud for the original pm2-githook(https://github.com/vmarchaud/pm2-githook) module on which this is based. 
