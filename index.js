@@ -7,21 +7,19 @@
 const pmx = require('pmx');
 const pm2 = require('pm2');
 
-const slack = require('./slack');
-const Worker = require('./Worker');
-const {
-	logger,
-	initLogStream,
-	localeDateString,
-} = require('./helpers');
+const Worker = require('./lib/Worker');
+const slack = require('./lib/slack');
+const logger = require('./lib/logger');
+const {localeDateString} = require('./lib/helpers');
 
 
 /**
  * Init pmx module
  */
 pmx.initModule({}, (err, conf) => {
-	initLogStream(conf.logsDir);
+	logger.init(conf.logsDir);
 	slack.init(conf.slack);
+
 	pm2.connect((err2) => {
 		if (err || err2) {
 			logger.error('[%s] Error: %s', localeDateString(), JSON.stringify(err || err2));
