@@ -68,6 +68,17 @@
 					"serveReports": "",
 					"lastGoodCommit": ""
 				}
+			},
+			"webhook-test": {
+				"secret": "abc",
+				"prehook": "npm install",
+				"posthook": "echo done",
+				"service": "github",
+				"tests": {
+					"testCmd": "npm run test",
+					"serveReports": "true",
+					"lastGoodCommit": ""
+				}
 			}
 		},
 		"slack": {
