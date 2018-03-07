@@ -1,52 +1,80 @@
 {
-  "name": "pm2-githook",
-  "version": "1.9.1",
-  "description": "receive http hook from multiple source and ask pm2 to reload the application for you",
-  "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/vmarchaud/pm2-githook.git"
-  },
-  "keywords": [
-    "pm2",
-    "github",
-    "gitlab",
-    "webhook",
-    "hook",
-    "reload",
-    "restart",
-    "git",
-    "pull",
-    "droneci",
-    "ci",
-    "jenkins",
-    "bitbucket"
-  ],
-  "author": "vmarchaud",
-  "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/vmarchaud/pm2-githook/issues"
-  },
-  "homepage": "https://github.com/vmarchaud/pm2-githook#readme",
-  "dependencies": {
-    "async": "^2.1.1",
-    "ipaddr.js": "^1.2.0",
-    "pm2": "^2.0.18",
-    "pmx": "^0.6.8",
-    "vizion": "^0.2.13"
-  },
-  "config": {
-    "apps": {
-      "app_name": {
-        "secret": "mysecret",
-        "prehook": "npm install --production && git submodule update --init",
-        "posthook": "echo done",
-        "service": "github"
-      }
-    },
-    "port": 8888
-  }
+	"name": "pm2-githook2",
+	"version": "2.0.0",
+	"description": "A PM2 module to receive webhook requests from github/gitlab and ask pm2 to reload the application for you ",
+	"main": "index.js",
+	"scripts": {
+		"test": "echo \"Error: no test specified\" && exit 1"
+	},
+	"repository": {
+		"type": "git",
+		"url": "git+https://github.com/rohit-smpx/pm2-githook2.git"
+	},
+	"keywords": [
+		"pm2",
+		"pm2-module",
+		"github",
+		"gitlab",
+		"webhook",
+		"hook",
+		"reload",
+		"restart",
+		"git",
+		"pull",
+		"droneci",
+		"ci",
+		"jenkins",
+		"bitbucket"
+	],
+	"author": "rohit-smpx",
+	"license": "MIT",
+	"bugs": {
+		"url": "https://github.com/rohit-smpx/pm2-githook2/issues"
+	},
+	"homepage": "https://github.com/rohit-smpx/pm2-githook2#readme",
+	"dependencies": {
+		"@slack/client": "^3.16.0",
+		"async": "^2.6.0",
+		"fs-extra": "^5.0.0",
+		"ipaddr.js": "^1.2.0",
+		"nodegit": "^0.21.0",
+		"pm2": "^2.0.18",
+		"pmx": "^0.6.8",
+		"rotating-file-stream": "^1.3.4",
+		"tmp": "0.0.33",
+		"vizion": "^0.2.13"
+	},
+	"devDependencies": {
+		"eslint": "4.13.1",
+		"eslint-config-smartprix": "^3.3.1"
+	},
+	"eslintConfig": {
+		"extends": "smartprix",
+		"rules": {
+			"no-await-in-loop": 0,
+			"no-console": 0,
+			"complexity": "off"
+		}
+	},
+	"config": {
+		"apps": {
+			"app_name": {
+				"secret": "mysecret",
+				"prehook": "npm install --production && git submodule update --init",
+				"posthook": "echo done",
+				"service": "github",
+				"tests": {
+					"testCmd": "npm run test",
+					"reportPath": "testReport/filename",
+					"lastGoodCommit": "COMMIT_HASH"
+				}
+			}
+		},
+		"slack": {
+			"webhook": "https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX",
+			"channel": ""
+		},
+		"logsDir": "/smartprix/logs/server_logs/pm2/githook",
+		"port": 8888
+	}
 }
