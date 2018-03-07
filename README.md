@@ -5,6 +5,10 @@ PM2 module to receive http webhook from github, execute pre/post hook and gracef
 This is a fork of the original [pm2-githook](https://github.com/vmarchaud/pm2-githook) by vmarchaud. I found the error reporting lacking, ended up adding a few things like:
 * A different log dir which includes the hook outputs (didn't want to populate pm2 logs with anything more than success/error messages)
 * Automatic kill of any old running hooks for when your git pushes happen quicker than your hook completes
+* A test runner, the repository will be cloned in a temp dir and tests run before pulling the application (tests should exit with 0 for success and 1 for failure)
+* If your tests output [mochawesome](https://github.com/adamgruber/mochawesome) results, they can be served using the already active http server for githooks.
+	Report will be available at `http://127.0.0.1:8888/APP_NAME/COMMIT_HASH`, with the latest one being available at `http://127.0.0.1:8888/APP_NAME`
+* Slack notifications, receive slack notification on successfull deployment and tests passing/failing
 
 ## Install/Update
 
@@ -15,18 +19,31 @@ For now this is the way, until I publish this to npm.
 ## Configure
 
 - `port` (Defaults to `8888`) : The port that will be used by the http server to receive hooks.
+- `logsDir` : The log dir where all the logs will be stored, saved with an internal logrotate. This will also have the output of all the hooks output unlike pm2's logs of the module, which will only have success and error messages.
+- `slack` : Contains slack options in JSON :
+
+	```json
+	{
+		"webhook": "https://hooks.slack.com/services/XXXXXXXXX/XXXXXXXXX/XXXXXXXXXXXXXXXXXXXXXXXX",
+		"channel": "#dev"
+	}
+	```
 - `apps` : Contains definition of applications in JSON : 
-- `logDir` : The log dir where all the logs will be stored, saved with an internal logrotate. This will also have the output of all the hooks output unlike pm2's logs of the module, which will only have success and error messages.
 
     ```json
-      {
-        "APP_NAME" : {
-          "secret" : "supersecret",
-          "prehook" : "npm install --production && git submodule update --init",
-          "posthook" : "echo done",
-          "service": "github"
-        }
-      }
+	{
+		"APP_NAME" : {
+			"secret" : "supersecret",
+			"prehook" : "npm install --production && git submodule update --init",
+			"posthook" : "echo done",
+			"service": "github",
+			"tests": {
+				"testCmd": "npm run test",
+				"serveReports": "true",
+				"lastGoodCommit": ""
+			}
+		}
+	}
     ```
     
     - `APP_NAME` is the name of the api **in pm2** and in the **url** defined on github or gitlab (eg: : `http://127.0.0.1:8888/APP_NAME`).
@@ -39,10 +56,12 @@ For now this is the way, until I publish this to npm.
       - `jenkins` : you'll need to set the secret as the ip of the jenkins (can specify branch)
       - `bitbucket` : secret not needed, bitbucket ip range is inside the code (can specify branch)
       - `droneci` : you'll need to set the secret to match the `Authorization` header defined inside the [plugin](http://addons.drone.io/webhook/) (can specify branch)
+	- `tests` :
+	  - :
     - `nopm2` if set to true, we will not reload the application using pm2 (default to `false`)
     - `cwd` if provided we don't resolve the cwd using pm2 and will take this value (defaults to `undefined`)
 
-`(can specify branch)`  mean that you can use a addional configuration to run the posthook on a specific branch
+`(can specify branch)`  mean that you can use an additional configuration to run the posthook on a specific branch
 
 #### How to set these values ?
 
