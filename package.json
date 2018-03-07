@@ -1,6 +1,6 @@
 {
 	"name": "pm2-githook2",
-	"version": "1.9.2",
+	"version": "2.0.0",
 	"description": "A PM2 module to receive webhook requests from github/gitlab and ask pm2 to reload the application for you ",
 	"main": "index.js",
 	"scripts": {
@@ -34,7 +34,7 @@
 	"homepage": "https://github.com/rohit-smpx/pm2-githook2#readme",
 	"dependencies": {
 		"@slack/client": "^3.16.0",
-		"async": "^2.1.1",
+		"async": "^2.6.0",
 		"fs-extra": "^5.0.0",
 		"ipaddr.js": "^1.2.0",
 		"nodegit": "^0.21.0",
@@ -65,19 +65,8 @@
 				"service": "github",
 				"tests": {
 					"testCmd": "npm run test",
-					"serveReports": "",
-					"lastGoodCommit": ""
-				}
-			},
-			"webhook-test": {
-				"secret": "abc",
-				"prehook": "npm install",
-				"posthook": "echo done",
-				"service": "github",
-				"tests": {
-					"testCmd": "npm run test",
-					"serveReports": "true",
-					"lastGoodCommit": ""
+					"reportPath": "testReport/filename",
+					"lastGoodCommit": "COMMIT_HASH"
 				}
 			}
 		},
