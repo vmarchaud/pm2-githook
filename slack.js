@@ -1,11 +1,11 @@
 const Webhook = require('@slack/client').IncomingWebhook;
-const { logger } = require('./helpers');
+const {logger} = require('./helpers');
 
 let slack;
 const options = {};
 
 module.exports = {
-	init: ({ webhook, channel }) => {
+	init: ({webhook, channel}) => {
 		slack = new Webhook(webhook);
 		options.channel = channel;
 	},
@@ -43,6 +43,5 @@ module.exports = {
 			}
 			logger.log('Sent slack msg. Received', statusCode, 'from Slack.\n');
 		});
-	}
-},
+	},
 };
