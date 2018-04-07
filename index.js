@@ -248,6 +248,14 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
       if ('sha1=' + hash !== req.headers['x-hub-signature']) {
         return util.format('[%s] Received invalid request for app %s', new Date().toISOString(), targetName);
       }
+
+      var body = JSON.parse(req.body)
+      if (targetApp.branch) {
+        var regex = new RegExp('/refs/heads/' + targetApp.branch)
+        if (!regex.test(body.ref)) {
+          return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), data.build.branch, body.ref);
+        }
+      }
       break;
     }
   }

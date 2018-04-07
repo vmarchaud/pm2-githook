@@ -27,7 +27,7 @@ PM2 module to receive http webhook from github, execute pre/post hook and gracef
     - `prehook` is the shell command executed in the `cwd` **(care of this)** of the app after the `pull` and before the `gracefullReload`.
     - `posthook` is the shell command executed in the `cwd` **(care of this)** of the app after making the `gracefullReload`.
     - `service` is the service used to make the http call (`github` is the default)
-      - `github` : you'll need to set the same secret as defined in github 
+      - `github` : you'll need to set the same secret as defined in github (can specify branch)
       - `gitlab` : you'll need to set the secret as the token defined in gitlab
       - `jenkins` : you'll need to set the secret as the ip of the jenkins (can specify branch)
       - `bitbucket` : secret not needed, bitbucket ip range is inside the code (can specify branch)
