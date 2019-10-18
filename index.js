@@ -234,6 +234,29 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
       }
       break;
     }
+    case 'gogs': {
+      if (!req.headers['X-Gogs-Event'] || !req.headers['X-Gogs-Signature']) {
+        return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
+      }
+
+      // compute hash of body with secret, github should send this to verify authenticity
+      var temp = crypto.createHmac('sha256', targetApp.secret);
+      temp.update(req.body, 'utf-8');
+      var hash = temp.digest('hex');
+
+      if (hash !== req.headers['X-Gogs-Signature']) {
+        return util.format('[%s] Received invalid request for app %s', new Date().toISOString(), targetName);
+      }
+
+      var body = JSON.parse(req.body)
+      if (targetApp.branch) {
+        var regex = new RegExp('/refs/heads/' + targetApp.branch)
+        if (!regex.test(body.ref)) {
+          return util.format('[%s] Received valid hook but with a branch %s than configured for app %s', new Date().toISOString(), body.ref, targetName);
+        }
+      }
+      break;
+    }
     case 'github' :
     default: {
       if (!req.headers['x-github-event'] || !req.headers['x-hub-signature']) {
