@@ -235,7 +235,7 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
       break;
     }
     case 'gogs': {
-      if (!req.headers['X-Gogs-Event'] || !req.headers['X-Gogs-Signature']) {
+      if (!req.headers['x-gogs-event'] || !req.headers['x-gogs-signature']) {
         return util.format('[%s] Received invalid request for app %s (no headers found)', new Date().toISOString(), targetName);
       }
 
@@ -244,7 +244,7 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
       temp.update(req.body, 'utf-8');
       var hash = temp.digest('hex');
 
-      if (hash !== req.headers['X-Gogs-Signature']) {
+      if (hash !== req.headers['x-gogs-signature']) {
         return util.format('[%s] Received invalid request for app %s', new Date().toISOString(), targetName);
       }
 
