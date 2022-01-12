@@ -160,7 +160,7 @@ Worker.prototype.processRequest = function (req) {
       if (err) {
         console.log('[%s] An error has occuring while processing app %s', new Date().toISOString(), targetName);
         spawnAsExec(targetApp.errorhook, execOptions,
-          logCallback(cb, '[%s] Errorhook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
+          logCallback(() => {}, '[%s] Errorhook command has been successfuly executed for app %s', new Date().toISOString(), targetName));
         console.error(err);
       }
     });
