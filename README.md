@@ -17,6 +17,7 @@ PM2 module to receive http webhook from github, execute pre/post hook and gracef
           "secret" : "supersecret",
           "prehook" : "npm install --production && git submodule update --init",
           "posthook" : "echo done",
+          "errorhook" : "echo error",
           "service": "github"
         }
       }
@@ -26,6 +27,7 @@ PM2 module to receive http webhook from github, execute pre/post hook and gracef
     - `secret` is the secret you put in github/gitlab to verify that the transaction is made by github/gitlab.
     - `prehook` is the shell command executed in the `cwd` **(care of this)** of the app after the `pull` and before the `gracefullReload`.
     - `posthook` is the shell command executed in the `cwd` **(care of this)** of the app after making the `gracefullReload`.
+    - `errorhook` is the shell command executed in the `cwd` **(care of this)** of the app if an error occurs.
     - `service` is the service used to make the http call (`github` is the default)
       - `github` : you'll need to set the same secret as defined in github (can specify branch)
       - `gogs` : (applies to forks such as gitea) you'll need to set the same secret as defined in gogs (can specify branch)
@@ -47,7 +49,7 @@ To set the `apps` option and since its a json string, i advice you to escape it 
 
 e.g:
 - `pm2 set pm2-githook:port 8080` (bind the http server port to 8080)
-- `pm2 set pm2-githook:apps "{\"APP_NAME\":{\"secret\":\"supersecret\",\"prehook\":\"npm install --production && git submodule update --init\",\"posthook\":\"echo done\"}}"`
+- `pm2 set pm2-githook:apps "{\"APP_NAME\":{\"secret\":\"supersecret\",\"prehook\":\"npm install --production && git submodule update --init\",\"posthook\":\"echo done\",\"errorhook\":\"echo error\"}}"`
 
 ## Uninstall
 
