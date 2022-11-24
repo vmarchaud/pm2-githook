@@ -144,7 +144,7 @@ Worker.prototype.processRequest = function (req) {
     reloadApplication: function reloadApplication(cb) {
       if (targetApp.nopm2) return cb();
 
-      pm2.gracefulReload(targetName,
+      pm2.reload(targetName,
 	    logCallback(cb, '[%s] Successfuly reloaded application %s', new Date().toISOString(), targetName));
     },
     postHook: function postHook(cb) {
