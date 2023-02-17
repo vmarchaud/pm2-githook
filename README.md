@@ -53,4 +53,4 @@ e.g:
 
 ## Uninstall
 
-`pm2 uninstall pm2-githook
+`pm2 uninstall pm2-githook`
