@@ -1,3 +1,7 @@
+## [Depreciation notice]
+
+This module is not maintained anymore as i stopped using PM2 a long time ago, feel free to fork it to continue using it, fix your bugs or dev your features !
+
 ## Description
 
 PM2 module to receive http webhook from github, execute pre/post hook and gracefull reload the application using pm2.
