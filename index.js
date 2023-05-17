@@ -225,6 +225,10 @@ Worker.prototype.checkRequest = function checkRequest(targetApp, req) {
       var configured = ipaddr.parseCIDR(ip);
       var source = ipaddr.parse(req.ip);
 
+      if (req.ip === req.headers['x-forwarded-for']) {
+        return util.format('[%s] Received request from %s for app %s but ip %s cannot be trusted (coming from headers)', new Date().toISOString(), req.ip, targetName, ip);
+      }
+
       if (!source.match(configured)) {
         return util.format('[%s] Received request from %s for app %s but ip configured was %s', new Date().toISOString(), req.ip, targetName, ip);
       }
